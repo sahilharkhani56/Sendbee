@@ -1,0 +1,42 @@
+# ── Dependencies ──
+node_modules/
+
+# ── Build outputs ──
+dist/
+.next/
+.turbo/
+out/
+
+# ── Environment ──
+.env
+.env.local
+.env.*.local
+
+# ── Database ──
+packages/database/prisma/dev.db
+
+# ── IDE ──
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+
+# ── OS ──
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Logs ──
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# ── Coverage ──
+coverage/
+*.lcov
+
+# ── Graphify ──
+.graphify/
+
+# ── Misc ──
+*.tsbuildinfo

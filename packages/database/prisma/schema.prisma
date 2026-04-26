@@ -1,0 +1,387 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ─────────────────────────────────────────────────
+
+enum BusinessVertical {
+  clinic
+  salon
+  gym
+  education
+  restaurant
+  realestate
+  legal
+  repair
+  events
+  generic
+
+  @@map("business_vertical")
+}
+
+enum TenantStatus {
+  active
+  suspended
+  trial
+  churned
+
+  @@map("tenant_status")
+}
+
+enum UserRole {
+  owner
+  admin
+  manager
+  staff
+
+  @@map("user_role")
+}
+
+enum SuperAdminRole {
+  super_admin
+  support
+  viewer
+
+  @@map("super_admin_role")
+}
+
+enum ConversationStatus {
+  open
+  resolved
+
+  @@map("conversation_status")
+}
+
+enum MessageDirection {
+  inbound
+  outbound
+
+  @@map("message_direction")
+}
+
+enum MessageStatus {
+  queued
+  sent
+  delivered
+  read
+  failed
+
+  @@map("message_status")
+}
+
+enum MessageType {
+  text
+  image
+  document
+  audio
+  video
+  interactive
+  template
+  reaction
+  location
+  contacts
+  sticker
+
+  @@map("message_type")
+}
+
+enum BookingStatus {
+  confirmed
+  completed
+  cancelled
+  no_show
+
+  @@map("booking_status")
+}
+
+enum CampaignStatus {
+  draft
+  scheduled
+  sending
+  paused
+  completed
+  cancelled
+
+  @@map("campaign_status")
+}
+
+enum TemplateStatus {
+  pending
+  approved
+  rejected
+
+  @@map("template_status")
+}
+
+// ─── TIER 1: Super Admin (Platform Level) ─────────────────
+
+model SuperAdmin {
+  id           String         @id @default(uuid())
+  email        String         @unique
+  passwordHash String         @map("password_hash")
+  name         String
+  role         SuperAdminRole @default(super_admin)
+  isActive     Boolean        @default(true) @map("is_active")
+  lastLoginAt  DateTime?      @map("last_login_at")
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+
+  auditLogs PlatformAuditLog[] @relation("super_admin_actions")
+
+  @@map("super_admins")
+}
+
+model PlatformAuditLog {
+  id         String   @id @default(uuid())
+  actorType  String   @map("actor_type")
+  actorId    String   @map("actor_id")
+  action     String
+  targetType String   @map("target_type")
+  targetId   String   @map("target_id")
+  metadata   Json     @default("{}")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  superAdmin SuperAdmin? @relation("super_admin_actions", fields: [actorId], references: [id])
+
+  @@index([actorId])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+  @@map("platform_audit_log")
+}
+
+// ─── TIER 2 & 3: Tenant + Users ───────────────────────────
+
+model Tenant {
+  id               String           @id @default(uuid())
+  name             String
+  slug             String           @unique
+  phone            String
+  email            String?
+  businessVertical BusinessVertical @default(generic) @map("business_vertical")
+  verticalConfig   Json             @default("{}") @map("vertical_config")
+  waPhoneId        String?          @map("wa_phone_id")
+  waBusinessId     String?          @map("wa_business_id")
+  waAccessToken    String?          @map("wa_access_token")
+  plan             String           @default("trial")
+  planExpiresAt    DateTime?        @map("plan_expires_at")
+  settings         Json             @default("{}")
+  status           TenantStatus     @default(trial)
+  suspendedBy      String?          @map("suspended_by")
+  suspendedReason  String?          @map("suspended_reason")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+
+  users           User[]
+  contacts        Contact[]
+  conversations   Conversation[]
+  providers       Provider[]
+  bookings        Booking[]
+  campaigns       Campaign[]
+  templates       Template[]
+  automationRules AutomationRule[]
+
+  @@map("tenants")
+}
+
+model User {
+  id          String    @id @default(uuid())
+  tenantId    String    @map("tenant_id")
+  phone       String
+  name        String
+  role        UserRole  @default(staff)
+  permissions Json      @default("{}") @map("permissions")
+  isActive    Boolean   @default(true) @map("is_active")
+  invitedBy   String?   @map("invited_by")
+  lastLoginAt DateTime? @map("last_login_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, phone])
+  @@index([tenantId])
+  @@map("users")
+}
+
+// ─── Contact & Conversations ──────────────────────────────
+
+model Contact {
+  id           String   @id @default(uuid())
+  tenantId     String   @map("tenant_id")
+  phoneE164    String   @map("phone_e164")
+  name         String?
+  email        String?
+  tags         String[] @default([])
+  customFields Json     @default("{}") @map("custom_fields")
+  optOut       Boolean  @default(false) @map("opt_out")
+  isDeleted    Boolean  @default(false) @map("is_deleted")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  conversations Conversation[]
+  bookings      Booking[]
+
+  @@unique([tenantId, phoneE164])
+  @@index([tenantId])
+  @@index([tenantId, tags])
+  @@map("contacts")
+}
+
+model Conversation {
+  id            String             @id @default(uuid())
+  tenantId      String             @map("tenant_id")
+  contactId     String             @map("contact_id")
+  status        ConversationStatus @default(open)
+  assignedTo    String?            @map("assigned_to")
+  unreadCount   Int                @default(0) @map("unread_count")
+  lastMessageAt DateTime?          @map("last_message_at")
+  createdAt     DateTime           @default(now()) @map("created_at")
+  updatedAt     DateTime           @updatedAt @map("updated_at")
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contact  Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  messages Message[]
+
+  @@unique([tenantId, contactId])
+  @@index([tenantId, status])
+  @@index([tenantId, lastMessageAt])
+  @@map("conversations")
+}
+
+model Message {
+  id             String           @id @default(uuid())
+  tenantId       String           @map("tenant_id")
+  conversationId String           @map("conversation_id")
+  direction      MessageDirection
+  type           MessageType      @default(text)
+  content        Json             @default("{}")
+  status         MessageStatus    @default(queued)
+  waMessageId    String?          @map("wa_message_id")
+  sentBy         String?          @map("sent_by")
+  errorCode      String?          @map("error_code")
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@index([tenantId, createdAt])
+  @@index([waMessageId])
+  @@map("messages")
+}
+
+// ─── Providers & Bookings ─────────────────────────────────
+
+model Provider {
+  id           String  @id @default(uuid())
+  tenantId     String  @map("tenant_id")
+  name         String
+  phone        String?
+  email        String?
+  specialization String?
+  workingHours Json    @default("{}") @map("working_hours")
+  breakHours   Json    @default("[]") @map("break_hours")
+  slotDuration Int     @default(30) @map("slot_duration")
+  isActive     Boolean @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  bookings Booking[]
+
+  @@index([tenantId])
+  @@map("providers")
+}
+
+model Booking {
+  id         String        @id @default(uuid())
+  tenantId   String        @map("tenant_id")
+  providerId String        @map("provider_id")
+  contactId  String        @map("contact_id")
+  startsAt   DateTime      @map("starts_at")
+  endsAt     DateTime      @map("ends_at")
+  status     BookingStatus @default(confirmed)
+  notes      String?
+  createdAt  DateTime      @default(now()) @map("created_at")
+  updatedAt  DateTime      @updatedAt @map("updated_at")
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  provider Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  contact  Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, providerId, startsAt])
+  @@index([tenantId, startsAt])
+  @@map("bookings")
+}
+
+// ─── Campaigns & Templates ────────────────────────────────
+
+model Template {
+  id           String         @id @default(uuid())
+  tenantId     String         @map("tenant_id")
+  name         String
+  category     String         @default("utility")
+  language     String         @default("en")
+  content      Json           @default("{}")
+  variables    Json           @default("[]")
+  status       TemplateStatus @default(pending)
+  waTemplateId String?        @map("wa_template_id")
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  campaigns Campaign[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@map("templates")
+}
+
+model Campaign {
+  id            String         @id @default(uuid())
+  tenantId      String         @map("tenant_id")
+  templateId    String         @map("template_id")
+  name          String
+  segmentRules  Json           @default("{}") @map("segment_rules")
+  scheduledAt   DateTime?      @map("scheduled_at")
+  status        CampaignStatus @default(draft)
+  totalContacts Int            @default(0) @map("total_contacts")
+  sentCount     Int            @default(0) @map("sent_count")
+  deliveredCount Int           @default(0) @map("delivered_count")
+  readCount     Int            @default(0) @map("read_count")
+  failedCount   Int            @default(0) @map("failed_count")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  template Template @relation(fields: [templateId], references: [id])
+
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@map("campaigns")
+}
+
+// ─── Automation ───────────────────────────────────────────
+
+model AutomationRule {
+  id        String   @id @default(uuid())
+  tenantId  String   @map("tenant_id")
+  name      String
+  trigger   Json     @default("{}")
+  actions   Json     @default("[]")
+  isActive  Boolean  @default(true) @map("is_active")
+  priority  Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, isActive])
+  @@map("automation_rules")
+}

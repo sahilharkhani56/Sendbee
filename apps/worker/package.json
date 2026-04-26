@@ -1,0 +1,23 @@
+{
+  "name": "@whatsapp-crm/worker",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src/"
+  },
+  "dependencies": {
+    "@whatsapp-crm/database": "workspace:*",
+    "@whatsapp-crm/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "@whatsapp-crm/eslint-config": "workspace:*",
+    "@whatsapp-crm/typescript-config": "workspace:*",
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.3"
+  }
+}

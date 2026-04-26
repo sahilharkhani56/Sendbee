@@ -1,0 +1,24 @@
+{
+  "name": "@whatsapp-crm/webhook",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src/"
+  },
+  "dependencies": {
+    "@whatsapp-crm/database": "workspace:*",
+    "@whatsapp-crm/shared": "workspace:*",
+    "fastify": "^5.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "@whatsapp-crm/eslint-config": "workspace:*",
+    "@whatsapp-crm/typescript-config": "workspace:*",
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.3"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "name": "@whatsapp-crm/database",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/client.js",
+  "types": "./dist/client.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "generate": "dotenv -e ../../.env -- prisma generate",
+    "migrate:dev": "dotenv -e ../../.env -- prisma migrate dev",
+    "migrate:deploy": "dotenv -e ../../.env -- prisma migrate deploy",
+    "seed": "dotenv -e ../../.env -- tsx prisma/seed.ts",
+    "studio": "dotenv -e ../../.env -- prisma studio",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src/",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.0.0"
+  },
+  "devDependencies": {
+    "@whatsapp-crm/typescript-config": "workspace:*",
+    "@whatsapp-crm/eslint-config": "workspace:*",
+    "prisma": "^6.0.0",
+    "dotenv-cli": "^8.0.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.5.0",
+    "rimraf": "^5.0.0"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  }
+}

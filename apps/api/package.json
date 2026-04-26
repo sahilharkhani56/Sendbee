@@ -1,0 +1,30 @@
+{
+  "name": "@whatsapp-crm/api",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src/"
+  },
+  "dependencies": {
+    "@fastify/cors": "^10.0.0",
+    "@fastify/helmet": "^13.0.0",
+    "@fastify/rate-limit": "^10.2.0",
+    "@whatsapp-crm/database": "workspace:*",
+    "@whatsapp-crm/shared": "workspace:*",
+    "fastify": "^5.2.0",
+    "jsonwebtoken": "^9.0.2",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.9",
+    "@types/node": "^22.15.0",
+    "@whatsapp-crm/eslint-config": "workspace:*",
+    "@whatsapp-crm/typescript-config": "workspace:*",
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.3"
+  }
+}

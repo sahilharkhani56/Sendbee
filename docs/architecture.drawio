@@ -1,0 +1,172 @@
+<mxfile host="app.diagrams.net" agent="WhatsApp CRM">
+  <diagram id="system-architecture" name="System Architecture">
+    <mxGraphModel dx="983" dy="507" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1400" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=22;fontStyle=1;" value="WhatsApp CRM for Indian SMBs — System Architecture" vertex="1">
+          <mxGeometry height="40" width="800" x="400" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="client-group" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14;fontStyle=1;verticalAlign=top;dashed=0;opacity=50;" value="CLIENT LAYER" vertex="1">
+          <mxGeometry height="130" width="1400" x="100" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="web-app" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;align=left;spacingLeft=10;" value="Web Dashboard&#xa;(Next.js 14 + Tailwind)&#xa;━━━━━━━━━━━━━━━━━━━━━━&#xa;• Conversation Inbox&#xa;• Contact Management&#xa;• Campaign Builder&#xa;• Analytics Dashboard&#xa;• Settings &amp; Billing" vertex="1">
+          <mxGeometry height="90" width="200" x="130" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="mobile-app" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;align=left;spacingLeft=10;dashed=1;" value="Mobile App&#xa;(React Native)&#xa;━━━━━━━━━━━━━━━━&#xa;• Push Notifications&#xa;• Quick Reply&#xa;• Appointment View&#xa;[Phase 2]" vertex="1">
+          <mxGeometry height="90" width="200" x="370" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="whatsapp-users" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;align=left;spacingLeft=10;" value="WhatsApp End Users&#xa;(Patients / Customers)&#xa;━━━━━━━━━━━━━━━━━━━━━━&#xa;• Send messages&#xa;• Book appointments&#xa;• Receive reminders&#xa;• Reply to broadcasts" vertex="1">
+          <mxGeometry height="90" width="200" x="610" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="api-consumers" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;align=left;spacingLeft=10;dashed=1;" value="External API Consumers&#xa;━━━━━━━━━━━━━━━━━━━━━━&#xa;• Zapier / Make&#xa;• Custom Integrations&#xa;• Partner Systems&#xa;[Phase 3]" vertex="1">
+          <mxGeometry height="90" width="200" x="850" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="admin-panel" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;align=left;spacingLeft=10;" value="Admin Panel&#xa;(Internal)&#xa;━━━━━━━━━━━━━━━━&#xa;• Tenant management&#xa;• System health&#xa;• Support tools" vertex="1">
+          <mxGeometry height="90" width="180" x="1090" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="cdn" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;fontStyle=1;" value="Cloudflare — CDN + WAF + DDoS Protection + DNS + SSL Termination" vertex="1">
+          <mxGeometry height="35" width="1400" x="100" y="240" as="geometry" />
+        </mxCell>
+        <mxCell id="alb" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;fontStyle=1;" value="AWS Application Load Balancer (ALB) — SSL, Health Checks, Sticky Sessions for WebSocket" vertex="1">
+          <mxGeometry height="30" width="1400" x="100" y="295" as="geometry" />
+        </mxCell>
+        <mxCell id="api-layer" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=13;fontStyle=1;verticalAlign=top;opacity=50;" value="API / GATEWAY LAYER (ECS Fargate — Auto-scaling)" vertex="1">
+          <mxGeometry height="150" width="1400" x="100" y="345" as="geometry" />
+        </mxCell>
+        <mxCell id="api-server" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;align=left;spacingLeft=10;" value="API Server (Fastify)&#xa;━━━━━━━━━━━━━━━━━━━━━━━━━━━━━&#xa;• JWT Auth Middleware&#xa;• Tenant ID Extraction&#xa;• Zod Request Validation&#xa;• Rate Limiting (Redis)&#xa;• CORS + Security Headers&#xa;• REST API Endpoints&#xa;• Request Logging (Pino)" vertex="1">
+          <mxGeometry height="115" width="280" x="120" y="370" as="geometry" />
+        </mxCell>
+        <mxCell id="webhook-receiver" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;align=left;spacingLeft=10;" value="Webhook Receiver (Fastify)&#xa;━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━&#xa;• Separate service (independent scaling)&#xa;• X-Hub-Signature-256 verification&#xa;• Immediate 200 OK response (&lt;5s SLA)&#xa;• Deduplication via Redis SETNX&#xa;• Enqueue to BullMQ for async processing&#xa;• Handles: messages, status updates, errors" vertex="1">
+          <mxGeometry height="115" width="330" x="420" y="370" as="geometry" />
+        </mxCell>
+        <mxCell id="ws-server" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;align=left;spacingLeft=10;" value="WebSocket Server (Socket.io)&#xa;━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━&#xa;• Redis Adapter (multi-instance)&#xa;• Room per tenant for isolation&#xa;• Events: new_message, status_update,&#xa;  appointment_booked, notification&#xa;• Auth: JWT verified on connect&#xa;• Heartbeat: 25s interval" vertex="1">
+          <mxGeometry height="115" width="280" x="770" y="370" as="geometry" />
+        </mxCell>
+        <mxCell id="cron-scheduler" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;align=left;spacingLeft=10;" value="Cron Scheduler&#xa;━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━&#xa;• Every 1min: Check upcoming reminders&#xa;• Every 1hr: Analytics aggregation&#xa;• Every day: Create next month partition&#xa;• Every day: Trial expiry check&#xa;• Every week: Inactive tenant cleanup" vertex="1">
+          <mxGeometry height="115" width="280" x="1070" y="370" as="geometry" />
+        </mxCell>
+        <mxCell id="service-layer" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=13;fontStyle=1;verticalAlign=top;opacity=50;" value="BUSINESS LOGIC / SERVICE LAYER (Shared Library in Monorepo)" vertex="1">
+          <mxGeometry height="115" width="1400" x="100" y="520" as="geometry" />
+        </mxCell>
+        <mxCell id="svc-auth" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=9;" value="Auth Service&#xa;OTP, JWT, RBAC&#xa;Session Mgmt" vertex="1">
+          <mxGeometry height="55" width="115" x="115" y="550" as="geometry" />
+        </mxCell>
+        <mxCell id="svc-crm" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=9;" value="CRM Service&#xa;Contacts, Tags&#xa;Custom Fields" vertex="1">
+          <mxGeometry height="55" width="115" x="245" y="550" as="geometry" />
+        </mxCell>
+        <mxCell id="svc-msg" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=9;" value="Messaging Svc&#xa;Send/Receive&#xa;Templates, Media" vertex="1">
+          <mxGeometry height="55" width="115" x="375" y="550" as="geometry" />
+        </mxCell>
+        <mxCell id="svc-appt" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=9;" value="Appointment Svc&#xa;Booking, Slots&#xa;Reminders" vertex="1">
+          <mxGeometry height="55" width="115" x="505" y="550" as="geometry" />
+        </mxCell>
+        <mxCell id="svc-campaign" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=9;" value="Campaign Svc&#xa;Broadcast, Drip&#xa;Segments" vertex="1">
+          <mxGeometry height="55" width="115" x="635" y="550" as="geometry" />
+        </mxCell>
+        <mxCell id="svc-analytics" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=9;" value="Analytics Svc&#xa;Dashboards&#xa;Reports, Export" vertex="1">
+          <mxGeometry height="55" width="115" x="765" y="550" as="geometry" />
+        </mxCell>
+        <mxCell id="svc-automation" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=9;" value="Automation Svc&#xa;Rules Engine&#xa;Triggers, Actions" vertex="1">
+          <mxGeometry height="55" width="115" x="895" y="550" as="geometry" />
+        </mxCell>
+        <mxCell id="svc-billing" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=9;" value="Billing Svc&#xa;Plans, Usage&#xa;Invoices" vertex="1">
+          <mxGeometry height="55" width="115" x="1025" y="550" as="geometry" />
+        </mxCell>
+        <mxCell id="svc-notify" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=9;" value="Notification Svc&#xa;Push, In-App&#xa;Email, Alerts" vertex="1">
+          <mxGeometry height="55" width="115" x="1155" y="550" as="geometry" />
+        </mxCell>
+        <mxCell id="svc-ai" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=9;dashed=1;" value="AI Service&#xa;Intent, Summary&#xa;Smart Reply" vertex="1">
+          <mxGeometry height="55" width="115" x="1285" y="550" as="geometry" />
+        </mxCell>
+        <mxCell id="queue-layer" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=13;fontStyle=1;verticalAlign=top;opacity=50;" value="MESSAGE QUEUE / EVENT STREAMING LAYER" vertex="1">
+          <mxGeometry height="100" width="1400" x="100" y="660" as="geometry" />
+        </mxCell>
+        <mxCell id="bullmq-box" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;align=left;spacingLeft=10;" value="BullMQ (Redis-backed) — MVP&#xa;━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━&#xa;Queues: message_send (priority) | webhook_process | campaign_execute | reminder_check | analytics_aggregate | dead_letter&#xa;Features: Delayed jobs, Exponential backoff, Concurrency control, Job progress tracking, Repeatable jobs" vertex="1">
+          <mxGeometry height="65" width="620" x="120" y="685" as="geometry" />
+        </mxCell>
+        <mxCell id="kafka-box" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;align=left;spacingLeft=10;dashed=1;" value="Apache Kafka (AWS MSK) — Phase 2+&#xa;━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━&#xa;Topics: whatsapp.webhook.raw | whatsapp.message.outbound | analytics.events | crm.contact.events | appointment.events | dlq.failed&#xa;Benefits: Event replay, Multiple consumers, 100K+ msg/sec, 7-day retention, Exactly-once semantics" vertex="1">
+          <mxGeometry height="65" width="720" x="760" y="685" as="geometry" />
+        </mxCell>
+        <mxCell id="worker-layer" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=13;fontStyle=1;verticalAlign=top;opacity=50;" value="BACKGROUND WORKERS (ECS Fargate — Independently Scalable)" vertex="1">
+          <mxGeometry height="90" width="1400" x="100" y="785" as="geometry" />
+        </mxCell>
+        <mxCell id="w-sender" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=9;" value="Message&#xa;Sender&#xa;(×3-10)" vertex="1">
+          <mxGeometry height="50" width="100" x="120" y="815" as="geometry" />
+        </mxCell>
+        <mxCell id="w-webhook" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=9;" value="Webhook&#xa;Processor&#xa;(×2-5)" vertex="1">
+          <mxGeometry height="50" width="100" x="240" y="815" as="geometry" />
+        </mxCell>
+        <mxCell id="w-campaign" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=9;" value="Campaign&#xa;Executor&#xa;(×2-5)" vertex="1">
+          <mxGeometry height="50" width="100" x="360" y="815" as="geometry" />
+        </mxCell>
+        <mxCell id="w-reminder" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=9;" value="Reminder&#xa;Scheduler&#xa;(×1)" vertex="1">
+          <mxGeometry height="50" width="100" x="480" y="815" as="geometry" />
+        </mxCell>
+        <mxCell id="w-analytics" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=9;" value="Analytics&#xa;Aggregator&#xa;(×1-2)" vertex="1">
+          <mxGeometry height="50" width="100" x="600" y="815" as="geometry" />
+        </mxCell>
+        <mxCell id="w-automation" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=9;" value="Automation&#xa;Engine&#xa;(×1-2)" vertex="1">
+          <mxGeometry height="50" width="100" x="720" y="815" as="geometry" />
+        </mxCell>
+        <mxCell id="w-import" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=9;" value="CSV Import&#xa;Processor&#xa;(×1)" vertex="1">
+          <mxGeometry height="50" width="100" x="840" y="815" as="geometry" />
+        </mxCell>
+        <mxCell id="w-dlq" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=9;" value="DLQ Monitor&#xa;&amp; Alerter&#xa;(×1)" vertex="1">
+          <mxGeometry height="50" width="100" x="960" y="815" as="geometry" />
+        </mxCell>
+        <mxCell id="w-media" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=9;" value="Media&#xa;Processor&#xa;(×1-2)" vertex="1">
+          <mxGeometry height="50" width="100" x="1080" y="815" as="geometry" />
+        </mxCell>
+        <mxCell id="data-layer" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;fontStyle=1;verticalAlign=top;opacity=50;" value="DATA LAYER (AWS Managed Services — ap-south-1 Mumbai)" vertex="1">
+          <mxGeometry height="140" width="1400" x="100" y="900" as="geometry" />
+        </mxCell>
+        <mxCell id="postgres" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=9;align=left;spacingLeft=8;" value="PostgreSQL 16 (RDS)&#xa;Multi-AZ | Read Replica&#xa;━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━&#xa;• tenants, users, contacts&#xa;• conversations, messages (partitioned)&#xa;• appointments, campaigns&#xa;• templates, automation_rules&#xa;• PgBouncer connection pooling" vertex="1">
+          <mxGeometry height="105" width="240" x="120" y="925" as="geometry" />
+        </mxCell>
+        <mxCell id="redis-data" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=9;align=left;spacingLeft=8;" value="Redis 7 Cluster (ElastiCache)&#xa;━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━&#xa;• L1 Cache (tenant config, contacts)&#xa;• BullMQ Queue Backend&#xa;• Rate Limiting Counters&#xa;• Pub/Sub (Socket.io adapter)&#xa;• Distributed Locks (Redlock)&#xa;• Session Window Tracking (24h TTL)&#xa;• Deduplication Sets" vertex="1">
+          <mxGeometry height="105" width="240" x="380" y="925" as="geometry" />
+        </mxCell>
+        <mxCell id="timescaledb" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=9;align=left;spacingLeft=8;" value="TimescaleDB (PG Extension)&#xa;━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━&#xa;• message_events hypertable&#xa;• Continuous aggregates&#xa;• Time-series analytics&#xa;• Auto data retention policies&#xa;• Compression (10x savings)" vertex="1">
+          <mxGeometry height="105" width="220" x="640" y="925" as="geometry" />
+        </mxCell>
+        <mxCell id="s3-data" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=9;align=left;spacingLeft=8;" value="AWS S3 (+ CloudFront CDN)&#xa;━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━&#xa;• Media: images, docs, voice&#xa;• CSV imports (upload)&#xa;• Generated invoices (PDF)&#xa;• Database backups&#xa;• Archived message partitions&#xa;• Lifecycle: Standard→IA→Glacier" vertex="1">
+          <mxGeometry height="105" width="220" x="880" y="925" as="geometry" />
+        </mxCell>
+        <mxCell id="elasticsearch-data" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=9;align=left;spacingLeft=8;dashed=1;" value="Elasticsearch [Phase 3]&#xa;━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━&#xa;• Full-text message search&#xa;• Contact search (fuzzy)&#xa;• Audit log search&#xa;• Replaces PG trgm index" vertex="1">
+          <mxGeometry height="105" width="200" x="1120" y="925" as="geometry" />
+        </mxCell>
+        <mxCell id="external-layer" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=13;fontStyle=1;verticalAlign=top;opacity=50;" value="EXTERNAL SERVICES &amp; INTEGRATIONS" vertex="1">
+          <mxGeometry height="90" width="1400" x="100" y="1065" as="geometry" />
+        </mxCell>
+        <mxCell id="ext-meta" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=9;fontStyle=1;" value="Meta Cloud API&#xa;(WhatsApp Business)&#xa;Send/Receive/Status" vertex="1">
+          <mxGeometry height="55" width="150" x="120" y="1090" as="geometry" />
+        </mxCell>
+        <mxCell id="ext-razorpay" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=9;" value="Razorpay&#xa;Subscriptions&#xa;UPI/Card/Netbanking" vertex="1">
+          <mxGeometry height="55" width="150" x="290" y="1090" as="geometry" />
+        </mxCell>
+        <mxCell id="ext-msg91" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=9;" value="MSG91&#xa;SMS OTP&#xa;Fallback Channel" vertex="1">
+          <mxGeometry height="55" width="150" x="460" y="1090" as="geometry" />
+        </mxCell>
+        <mxCell id="ext-gcal" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=9;dashed=1;" value="Google Calendar&#xa;OAuth2 Sync&#xa;[Phase 2]" vertex="1">
+          <mxGeometry height="55" width="150" x="630" y="1090" as="geometry" />
+        </mxCell>
+        <mxCell id="ext-openai" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=9;dashed=1;" value="OpenAI / LLM&#xa;Intent Detection&#xa;Smart Replies [Phase 3]" vertex="1">
+          <mxGeometry height="55" width="150" x="800" y="1090" as="geometry" />
+        </mxCell>
+        <mxCell id="ext-sentry" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=9;" value="Sentry&#xa;Error Tracking&#xa;Source Maps" vertex="1">
+          <mxGeometry height="55" width="150" x="970" y="1090" as="geometry" />
+        </mxCell>
+        <mxCell id="ext-grafana" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=9;" value="Grafana Cloud&#xa;Prometheus + Loki&#xa;Dashboards + Alerts" vertex="1">
+          <mxGeometry height="55" width="150" x="1140" y="1090" as="geometry" />
+        </mxCell>
+        <mxCell id="monitoring-box" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;align=left;spacingLeft=10;verticalAlign=top;" value="MONITORING &amp; OBSERVABILITY&#xa;━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━&#xa;📊 Prometheus (Metrics)&#xa;📋 Grafana (Dashboards)&#xa;📝 Loki (Log Aggregation)&#xa;🔍 Jaeger (Distributed Tracing)&#xa;🚨 Alertmanager → Slack/PagerDuty&#xa;🛡️ Sentry (Error Tracking)&#xa;⏱️ Better Uptime (Status Page)&#xa;📈 OpenTelemetry (Instrumentation)" vertex="1">
+          <mxGeometry height="130" width="450" x="100" y="1180" as="geometry" />
+        </mxCell>
+        <mxCell id="devops-box" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;align=left;spacingLeft=10;verticalAlign=top;" value="DEVOPS &amp; INFRASTRUCTURE&#xa;━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━&#xa;☁️ AWS (ap-south-1 Mumbai) | 🐳 Docker (multi-stage builds) | 🚀 ECS Fargate (serverless containers)&#xa;🔧 Terraform (IaC) | 🔄 GitHub Actions (CI/CD) | 🔒 AWS Secrets Manager | 📦 ECR (Container Registry)&#xa;🌐 Cloudflare (CDN/WAF) | 🏗️ Turborepo (Monorepo) | 🧪 Testcontainers (Integration Tests)" vertex="1">
+          <mxGeometry height="130" width="930" x="570" y="1180" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
