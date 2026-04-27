@@ -1,10 +1,10 @@
 import { PrismaClient, BusinessVertical, UserRole, SuperAdminRole } from "@prisma/client";
-import * as crypto from "crypto";
+import bcrypt from "bcrypt";
 
 const prisma = new PrismaClient();
 
-function hashPassword(password: string): string {
-  return crypto.createHash("sha256").update(password).digest("hex");
+async function hashPassword(password: string): Promise<string> {
+  return bcrypt.hash(password, 12);
 }
 
 async function main() {
@@ -13,10 +13,10 @@ async function main() {
   // ─── Super Admin ─────────────────────────
   const superAdmin = await prisma.superAdmin.upsert({
     where: { email: "admin@whatsapp-crm.com" },
-    update: {},
+    update: { passwordHash: await hashPassword("SuperAdmin@123") },
     create: {
       email: "admin@whatsapp-crm.com",
-      passwordHash: hashPassword("SuperAdmin@123"),
+      passwordHash: await hashPassword("SuperAdmin@123"),
       name: "Platform Admin",
       role: SuperAdminRole.super_admin,
     },
@@ -94,91 +94,116 @@ async function main() {
   console.log(`  ✓ ${clinicUsers.length} users for ${clinic.name}`);
 
   // ─── Providers for Salon ────────────────
-  const salonProvider = await prisma.provider.create({
-    data: {
-      tenantId: salon.id,
-      name: "Priya Sharma",
-      phone: "+919900000001",
-      specialization: "Hair Stylist",
-      workingHours: {
-        mon: { start: "09:00", end: "19:00" },
-        tue: { start: "09:00", end: "19:00" },
-        wed: { start: "09:00", end: "19:00" },
-        thu: { start: "09:00", end: "19:00" },
-        fri: { start: "09:00", end: "19:00" },
-        sat: { start: "10:00", end: "17:00" },
-      },
-      slotDuration: 30,
-    },
+  let salonProvider = await prisma.provider.findFirst({
+    where: { tenantId: salon.id, phone: "+919900000001" },
   });
+  if (!salonProvider) {
+    salonProvider = await prisma.provider.create({
+      data: {
+        tenantId: salon.id,
+        name: "Priya Sharma",
+        phone: "+919900000001",
+        specialization: "Hair Stylist",
+        workingHours: {
+          mon: { start: "09:00", end: "19:00" },
+          tue: { start: "09:00", end: "19:00" },
+          wed: { start: "09:00", end: "19:00" },
+          thu: { start: "09:00", end: "19:00" },
+          fri: { start: "09:00", end: "19:00" },
+          sat: { start: "10:00", end: "17:00" },
+        },
+        slotDuration: 30,
+      },
+    });
+  }
 
   // ─── Provider for Clinic ────────────────
-  const clinicProvider = await prisma.provider.create({
-    data: {
-      tenantId: clinic.id,
-      name: "Dr. Arjun Patel",
-      phone: "+919900000011",
-      specialization: "General Physician",
-      workingHours: {
-        mon: { start: "10:00", end: "18:00" },
-        tue: { start: "10:00", end: "18:00" },
-        wed: { start: "10:00", end: "18:00" },
-        thu: { start: "10:00", end: "18:00" },
-        fri: { start: "10:00", end: "18:00" },
-      },
-      slotDuration: 20,
-    },
+  let clinicProvider = await prisma.provider.findFirst({
+    where: { tenantId: clinic.id, phone: "+919900000011" },
   });
-  console.log("  ✓ Providers created");
+  if (!clinicProvider) {
+    clinicProvider = await prisma.provider.create({
+      data: {
+        tenantId: clinic.id,
+        name: "Dr. Arjun Patel",
+        phone: "+919900000011",
+        specialization: "General Physician",
+        workingHours: {
+          mon: { start: "10:00", end: "18:00" },
+          tue: { start: "10:00", end: "18:00" },
+          wed: { start: "10:00", end: "18:00" },
+          thu: { start: "10:00", end: "18:00" },
+          fri: { start: "10:00", end: "18:00" },
+        },
+        slotDuration: 20,
+      },
+    });
+  }
+  console.log("  ✓ Providers created/found");
 
   // ─── Contacts ───────────────────────────
-  const salonContact = await prisma.contact.create({
-    data: {
-      tenantId: salon.id,
-      phoneE164: "+919800000001",
-      name: "Neha Gupta",
-      tags: ["vip", "regular"],
-    },
+  let salonContact = await prisma.contact.findFirst({
+    where: { tenantId: salon.id, phoneE164: "+919800000001" },
   });
+  if (!salonContact) {
+    salonContact = await prisma.contact.create({
+      data: {
+        tenantId: salon.id,
+        phoneE164: "+919800000001",
+        name: "Neha Gupta",
+        tags: ["vip", "regular"],
+      },
+    });
+  }
 
-  const clinicContact = await prisma.contact.create({
-    data: {
-      tenantId: clinic.id,
-      phoneE164: "+919800000002",
-      name: "Rahul Verma",
-      tags: ["new-patient"],
-    },
+  let clinicContact = await prisma.contact.findFirst({
+    where: { tenantId: clinic.id, phoneE164: "+919800000002" },
   });
-  console.log("  ✓ Contacts created");
+  if (!clinicContact) {
+    clinicContact = await prisma.contact.create({
+      data: {
+        tenantId: clinic.id,
+        phoneE164: "+919800000002",
+        name: "Rahul Verma",
+        tags: ["new-patient"],
+      },
+    });
+  }
+  console.log("  ✓ Contacts created/found");
 
-  // ─── Sample Bookings ────────────────────
-  const now = new Date();
-  const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  // ─── Sample Bookings (skip if already exist) ──
+  const existingBookings = await prisma.booking.count({ where: { tenantId: salon.id } });
+  if (existingBookings === 0) {
+    const now = new Date();
+    const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
-  await prisma.booking.create({
-    data: {
-      tenantId: salon.id,
-      providerId: salonProvider.id,
-      contactId: salonContact.id,
-      startsAt: new Date(tomorrow.setHours(10, 0, 0, 0)),
-      endsAt: new Date(tomorrow.setHours(10, 30, 0, 0)),
-      status: "confirmed",
-      notes: "Haircut + Blow-dry",
-    },
-  });
+    await prisma.booking.create({
+      data: {
+        tenantId: salon.id,
+        providerId: salonProvider.id,
+        contactId: salonContact.id,
+        startsAt: new Date(tomorrow.setHours(10, 0, 0, 0)),
+        endsAt: new Date(tomorrow.setHours(10, 30, 0, 0)),
+        status: "confirmed",
+        notes: "Haircut + Blow-dry",
+      },
+    });
 
-  await prisma.booking.create({
-    data: {
-      tenantId: clinic.id,
-      providerId: clinicProvider.id,
-      contactId: clinicContact.id,
-      startsAt: new Date(tomorrow.setHours(14, 0, 0, 0)),
-      endsAt: new Date(tomorrow.setHours(14, 20, 0, 0)),
-      status: "confirmed",
-      notes: "General checkup",
-    },
-  });
-  console.log("  ✓ Bookings created");
+    await prisma.booking.create({
+      data: {
+        tenantId: clinic.id,
+        providerId: clinicProvider.id,
+        contactId: clinicContact.id,
+        startsAt: new Date(tomorrow.setHours(14, 0, 0, 0)),
+        endsAt: new Date(tomorrow.setHours(14, 20, 0, 0)),
+        status: "confirmed",
+        notes: "General checkup",
+      },
+    });
+    console.log("  ✓ Bookings created");
+  } else {
+    console.log("  ✓ Bookings already exist, skipping");
+  }
 
   console.log("\n✅ Seed complete!");
 }

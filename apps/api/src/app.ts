@@ -4,6 +4,9 @@ import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
 import { env } from "./env";
 import { healthRoutes } from "./routes/health";
+import { tenantAuthRoutes } from "./routes/tenant-auth";
+import { tenantProtectedRoutes } from "./routes/tenant-protected";
+import { adminAuthRoutes } from "./routes/admin-auth";
 
 export async function buildApp() {
   const app = Fastify({
@@ -29,6 +32,9 @@ export async function buildApp() {
 
   // ─── Routes ─────────────────────────────
   await app.register(healthRoutes);
+  await app.register(tenantAuthRoutes);       // /v1/auth/otp/*
+  await app.register(tenantProtectedRoutes);  // /v1/auth/refresh, /v1/team/*
+  await app.register(adminAuthRoutes);        // /admin/auth/*, /admin/tenants/*
 
   return app;
 }

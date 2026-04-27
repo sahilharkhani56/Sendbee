@@ -17,9 +17,11 @@
     "clean": "rimraf dist"
   },
   "dependencies": {
-    "@prisma/client": "^6.0.0"
+    "@prisma/client": "^6.0.0",
+    "bcrypt": "^6.0.0"
   },
   "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
     "@whatsapp-crm/typescript-config": "workspace:*",
     "@whatsapp-crm/eslint-config": "workspace:*",
     "@types/node": "^22.15.0",
