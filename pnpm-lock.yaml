@@ -71,6 +71,9 @@ importers:
       '@whatsapp-crm/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@whatsapp-crm/whatsapp-sdk':
+        specifier: workspace:*
+        version: link:../../packages/whatsapp-sdk
       bcrypt:
         specifier: ^6.0.0
         version: 6.0.0

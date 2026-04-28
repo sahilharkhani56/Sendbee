@@ -8,6 +8,7 @@ import { tenantAuthRoutes } from "./routes/tenant-auth";
 import { tenantProtectedRoutes } from "./routes/tenant-protected";
 import { adminAuthRoutes } from "./routes/admin-auth";
 import { contactRoutes } from "./routes/contacts";
+import { conversationRoutes } from "./routes/conversations";
 
 export async function buildApp() {
   const app = Fastify({
@@ -37,6 +38,7 @@ export async function buildApp() {
   await app.register(tenantProtectedRoutes);  // /v1/auth/refresh, /v1/team/*
   await app.register(adminAuthRoutes);        // /admin/auth/*, /admin/tenants/*
   await app.register(contactRoutes);          // /v1/contacts/*
+  await app.register(conversationRoutes);     // /v1/conversations/*, /v1/quick-replies/*
 
   return app;
 }
