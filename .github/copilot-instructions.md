@@ -29,9 +29,9 @@ Type `/graphify` in Copilot Chat to build or update the knowledge graph.
 
 ```
 PHASE:         Phase 1 — Foundation MVP (Weeks 1–8)
-CURRENT STEP:  Step 5 — Conversation Inbox
+CURRENT STEP:  Step 6 — Appointment System
 STEP STATUS:   NOT STARTED
-COMPLETED:     Step 0 (Scaffolding), Step 1 (DB Schema), Step 2 (Auth + 3-Tier), Step 3 (WhatsApp Integration), Step 4 (Contact Management)
+COMPLETED:     Step 0 (Scaffolding), Step 1 (DB Schema), Step 2 (Auth + 3-Tier), Step 3 (WhatsApp Integration), Step 4 (Contact Management), Step 5 (Conversation Inbox)
 
 WHAT IS BUILT SO FAR:
   ✅ Turborepo monorepo (apps: web, admin, api, webhook, worker)
@@ -49,26 +49,35 @@ WHAT IS BUILT SO FAR:
   ✅ Contact CSV import — async with Redis progress tracking, dedup + invalid phone handling
   ✅ Opt-out management — toggle endpoint + filter by optOut
   ✅ Soft-delete resurrection — recreating deleted contact restores it
+  ✅ Conversation list API — sorted by lastMessageAt DESC, filters: status, assignee, unassigned
+  ✅ Message thread API — cursor pagination (newest first)
+  ✅ Reply from inbox — send text via WhatsApp SDK (24h session guard + opt-out check)
+  ✅ Conversation assignment — assign/unassign to team member
+  ✅ Conversation status management — open/resolved toggle
+  ✅ Mark as read — reset unreadCount to 0
+  ✅ Internal notes — stored as messages with _note flag (not sent to WhatsApp)
+  ✅ Quick reply templates — CRUD stored in Redis (per-tenant)
 
-CURRENT TASK (Step 5):
-  → Conversation list API (sorted by last_message_at DESC, filters: status, assignee)
-  → Message thread API (cursor pagination)
-  → Reply from inbox (send via WhatsApp)
-  → Conversation assignment (to team member)
-  → Conversation status management (open → resolved)
-  → Unread count tracking (increment on inbound, reset on open)
-  → Real-time updates (Socket.io + Redis adapter)
-  → WebSocket auth (JWT on handshake) + tenant isolation (room per tenant)
-  → Quick reply templates + internal notes
-
-NEXT STEP (Step 6): Appointment System
-  → Provider CRUD, working hours, slot availability
+CURRENT TASK (Step 6):
+  → Provider CRUD (name, specialization, working hours, slot duration)
+  → Working hours + break hours configuration
+  → Slot availability API
+  → Manual booking from dashboard
   → WhatsApp booking flow (guided interactive messages)
   → Double-booking prevention (EXCLUSION constraint + distributed lock)
+  → Booking confirmation WhatsApp message
   → Auto-reminders (24h + 2h before, BullMQ delayed jobs)
+  → Cancellation/rescheduling + no-show detection
+
+NEXT STEP (Step 7): Campaign & Broadcast
+  → Template management (sync with Meta approved templates)
+  → Campaign creation (segment by tags/filters)
+  → Batch sending with rate limiting
+  → Campaign delivery tracking
 
 BLOCKERS / DECISIONS PENDING:
-  → [ ] Real WhatsApp Cloud API testing deferred until after Step 5
+  → [ ] Real WhatsApp Cloud API testing deferred until deployment
+  → [ ] Socket.io real-time layer deferred to frontend integration
 
 FILES MODIFIED SO FAR:
   → packages/database/prisma/schema.prisma  (complete schema)
@@ -79,6 +88,7 @@ FILES MODIFIED SO FAR:
   → apps/api/src/routes/tenant-protected.ts (refresh, logout, /me, team)
   → apps/api/src/routes/admin-auth.ts       (super admin auth)
   → apps/api/src/routes/contacts.ts         (full contact CRUD + import + timeline)
+  → apps/api/src/routes/conversations.ts    (inbox: list, thread, reply, assign, notes, quick-replies)
   → apps/api/src/app.ts                     (route registration)
   → packages/whatsapp-sdk/src/client.ts     (Meta Cloud API typed client)
   → apps/webhook/src/server.ts              (webhook receiver + signature verification)
@@ -332,8 +342,8 @@ Step 1: Database Schema & ORM   ✅ Day 3-4
 Step 2: Auth (3-Tier)           ✅ Day 5-8
 Step 3: WhatsApp Integration    ✅ Day 9-14   
 Step 4: Contact Management      ✅ Day 15-18 
-Step 5: Conversation Inbox      🔄 Day 19-24
-Step 6: Appointment System      ⬜ Day 25-32
+Step 5: Conversation Inbox      ✅ Day 19-24
+Step 6: Appointment System      🔄 Day 25-32
 Step 7: Campaign & Broadcast    ⬜ Day 33-38
 Step 8: Dashboard & Analytics   ⬜ Day 39-42
 Step 9: Billing & Subscription  ⬜ Day 43-47
@@ -417,22 +427,22 @@ Update `[ ]` to `[x]` as you complete features.
 - [x] Opt-out flag management (auto-detect STOP keyword)
 - [ ] Auto-create contact on first inbound message
 
-### 1F. Conversation Inbox ← CURRENT STEP
-- [ ] Conversation list API (sorted by last_message_at DESC)
-- [ ] Conversation filters (status, assignee)
-- [ ] Message thread API (cursor pagination)
-- [ ] Reply from inbox (send via WhatsApp)
-- [ ] Conversation assignment (to team member)
-- [ ] Conversation status management (open → resolved)
-- [ ] Unread count tracking (increment on inbound, reset on open)
-- [ ] Mark as read
+### 1F. Conversation Inbox ✅
+- [x] Conversation list API (sorted by last_message_at DESC)
+- [x] Conversation filters (status, assignee)
+- [x] Message thread API (cursor pagination)
+- [x] Reply from inbox (send via WhatsApp)
+- [x] Conversation assignment (to team member)
+- [x] Conversation status management (open → resolved)
+- [x] Unread count tracking (increment on inbound, reset on open)
+- [x] Mark as read
 - [ ] Real-time updates (Socket.io)
 - [ ] WebSocket authentication (JWT on handshake)
 - [ ] WebSocket tenant isolation (room per tenant)
-- [ ] Quick reply templates (staff pre-saved replies)
-- [ ] Internal notes on conversation (not sent to patient)
+- [x] Quick reply templates (staff pre-saved replies)
+- [x] Internal notes on conversation (not sent to patient)
 
-### 1G. Appointment System
+### 1G. Appointment System ← CURRENT STEP
 - [ ] Provider CRUD (name, specialization, photo, slot_duration)
 - [ ] Working hours configuration (per-provider per-day)
 - [ ] Break hours configuration (lunch, prayer time)
@@ -687,4 +697,4 @@ After completing a step, update **only** the `CURRENT STATUS` section:
 
 ---
 
-*Last Updated: April 28, 2026 | Phase 1 Step 5 of 11*
+*Last Updated: April 28, 2026 | Phase 1 Step 6 of 11*
