@@ -120,6 +120,9 @@ export async function tenantProtectedRoutes(app: FastifyInstance) {
           slug: user.tenant.slug,
           businessVertical: user.tenant.businessVertical,
           verticalConfig: user.tenant.verticalConfig,
+          plan: user.tenant.plan,
+          planExpiresAt: user.tenant.planExpiresAt,
+          status: user.tenant.status,
         },
       };
     });

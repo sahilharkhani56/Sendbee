@@ -46,6 +46,10 @@ export const PERMISSIONS = {
   USERS_VIEW: "users:view",
   USERS_MANAGE: "users:manage",
 
+  // Billing
+  BILLING_VIEW: "billing:view",
+  BILLING_MANAGE: "billing:manage",
+
   // Analytics
   ANALYTICS_VIEW: "analytics:view",
 } as const;

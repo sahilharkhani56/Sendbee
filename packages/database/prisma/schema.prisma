@@ -184,6 +184,8 @@ model Tenant {
   campaigns       Campaign[]
   templates       Template[]
   automationRules AutomationRule[]
+  subscriptions   Subscription[]
+  payments        Payment[]
 
   @@map("tenants")
 }
@@ -365,6 +367,87 @@ model Campaign {
   @@index([tenantId])
   @@index([tenantId, status])
   @@map("campaigns")
+}
+
+// ─── Billing & Subscriptions ──────────────────────────────
+
+enum SubscriptionStatus {
+  trialing
+  active
+  past_due
+  paused
+  cancelled
+  expired
+
+  @@map("subscription_status")
+}
+
+model Subscription {
+  id                  String             @id @default(uuid())
+  tenantId            String             @map("tenant_id")
+  plan                String             // trial, starter, growth, pro
+  status              SubscriptionStatus @default(trialing)
+  razorpaySubId       String?            @unique @map("razorpay_sub_id")
+  razorpayPlanId      String?            @map("razorpay_plan_id")
+  razorpayCustomerId  String?            @map("razorpay_customer_id")
+  currentPeriodStart  DateTime?          @map("current_period_start")
+  currentPeriodEnd    DateTime?          @map("current_period_end")
+  trialEndsAt         DateTime?          @map("trial_ends_at")
+  cancelledAt         DateTime?          @map("cancelled_at")
+  pausedAt            DateTime?          @map("paused_at")
+  graceEndsAt         DateTime?          @map("grace_ends_at")
+  metadata            Json               @default("{}")
+  createdAt           DateTime           @default(now()) @map("created_at")
+  updatedAt           DateTime           @updatedAt @map("updated_at")
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  payments Payment[]
+
+  @@index([tenantId])
+  @@index([razorpaySubId])
+  @@index([status])
+  @@map("subscriptions")
+}
+
+model Payment {
+  id                    String   @id @default(uuid())
+  tenantId              String   @map("tenant_id")
+  subscriptionId        String?  @map("subscription_id")
+  razorpayPaymentId     String?  @unique @map("razorpay_payment_id")
+  razorpayOrderId       String?  @map("razorpay_order_id")
+  razorpaySignature     String?  @map("razorpay_signature")
+  amount                Int      // Amount in paise (₹999 = 99900)
+  currency              String   @default("INR")
+  status                String   // captured, failed, refunded
+  method                String?  // upi, card, netbanking, wallet
+  description           String?
+  failureReason         String?  @map("failure_reason")
+  invoiceUrl            String?  @map("invoice_url")
+  metadata              Json     @default("{}")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id])
+
+  @@index([tenantId])
+  @@index([razorpayPaymentId])
+  @@index([tenantId, createdAt])
+  @@map("payments")
+}
+
+model UsageRecord {
+  id        String   @id @default(uuid())
+  tenantId  String   @map("tenant_id")
+  month     String   // YYYY-MM format
+  messages  Int      @default(0)
+  contacts  Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([tenantId, month])
+  @@index([tenantId])
+  @@map("usage_records")
 }
 
 // ─── Automation ───────────────────────────────────────────

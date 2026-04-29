@@ -14,6 +14,11 @@ const envSchema = z.object({
   JWT_ADMIN_SECRET: z.string().min(32),
 
   CORS_ORIGIN: z.string().default("http://localhost:3000"),
+
+  // Razorpay (optional — billing endpoints return mock data when absent)
+  RAZORPAY_KEY_ID: z.string().optional(),
+  RAZORPAY_KEY_SECRET: z.string().optional(),
+  RAZORPAY_WEBHOOK_SECRET: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

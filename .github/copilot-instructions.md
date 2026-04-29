@@ -29,9 +29,9 @@ Type `/graphify` in Copilot Chat to build or update the knowledge graph.
 
 ```
 PHASE:         Phase 1 — Foundation MVP (Weeks 1–8)
-CURRENT STEP:  Step 9 — Billing & Subscription
+CURRENT STEP:  Step 10 — Settings & Team
 STEP STATUS:   NOT STARTED
-COMPLETED:     Step 0 (Scaffolding), Step 1 (DB Schema), Step 2 (Auth + 3-Tier), Step 3 (WhatsApp Integration), Step 4 (Contact Management), Step 5 (Conversation Inbox), Step 6 (Appointment System), Step 7 (Campaign & Broadcast), Step 8 (Dashboard & Analytics)
+COMPLETED:     Step 0 (Scaffolding), Step 1 (DB Schema), Step 2 (Auth + 3-Tier), Step 3 (WhatsApp Integration), Step 4 (Contact Management), Step 5 (Conversation Inbox), Step 6 (Appointment System), Step 7 (Campaign & Broadcast), Step 8 (Dashboard & Analytics), Step 9 (Billing & Subscription)
 
 E2E TEST STATUS (Steps 0–7):
   ✅ 266 passed / 1 failed / 267 total (April 29, 2026)
@@ -102,14 +102,31 @@ WHAT IS BUILT SO FAR:
   ✅ Appointment summary chart API — today by status, past 7 days by status, upcoming confirmed count
   ✅ Conversation analytics API — open/resolved/total, new today, total unread
   ✅ Dashboard Redis cache — 30s TTL on all 4 endpoints
+  ✅ Billing DB schema — Subscription, Payment, UsageRecord models + SubscriptionStatus enum
+  ✅ Plan definitions — Trial (free 14d) / Starter ₹999 / Growth ₹2,499 / Pro ₹4,999
+  ✅ Razorpay HTTP client — custom fetch-based (no npm dependency), Basic auth
+  ✅ Razorpay webhook receiver — HMAC SHA256 signature verification (constant-time compare)
+  ✅ Webhook idempotency — Redis SETNX dedup by event+entityId (24h TTL)
+  ✅ Subscription lifecycle — create, activate, charge, cancel, pause, resume via webhooks
+  ✅ Payment processing — capture success, handle failure (7-day grace period)
+  ✅ Plan subscription API — create subscription (dev mode: direct activation, prod: Razorpay checkout)
+  ✅ Plan upgrade API — validates plan hierarchy (no downgrades), atomic plan switch
+  ✅ Subscription cancellation — access continues until period end
+  ✅ Payment history API — cursor pagination, excludes sensitive fields
+  ✅ 14-day free trial management — start-trial endpoint, prevents duplicate trials
+  ✅ Usage tracking — atomic upsert increment per tenant per month (messages, contacts)
+  ✅ Plan limit enforcement — checkPlanLimits() for contacts/messages/teamMembers
+  ✅ Check limits API — quick limit check endpoint for frontend gating
+  ✅ Payment verification — Razorpay signature verification (HMAC SHA256 of payment_id|subscription_id)
+  ✅ RBAC billing permissions — BILLING_VIEW and BILLING_MANAGE (owner+admin only)
 
-CURRENT TASK (Step 9): Billing & Subscription
-  → Plan selection (Trial / Starter / Growth / Pro)
-  → Razorpay subscription integration
-  → Payment success/failure handling
-  → Usage tracking + plan limit enforcement
+CURRENT TASK (Step 10): Settings & Team
+  → WhatsApp account linking (wa_phone_id + business_id + access_token encrypted)
+  → Business profile (name, address, logo, timezone)
+  → Business hours configuration
+  → Away message configuration
 
-NEXT STEP (Step 10): Settings & Team
+NEXT STEP (Step 11): Production Deployment
 
 BLOCKERS / DECISIONS PENDING:
   → [x] E2E testing completed for Steps 0–7 (266/267 passing)
@@ -120,21 +137,23 @@ BLOCKERS / DECISIONS PENDING:
   → [ ] BullMQ reminder worker deferred (Step 6 stores reminder keys; worker processes in apps/worker)
 
 FILES MODIFIED SO FAR:
-  → packages/database/prisma/schema.prisma  (complete schema — 12 models)
-  → packages/shared/src/permissions.ts      (RBAC permission system — 40+ permission keys)
+  → packages/database/prisma/schema.prisma  (complete schema — 15 models including billing)
+  → packages/shared/src/permissions.ts      (RBAC permission system — 40+ permission keys + billing)
   → packages/shared/src/verticals.ts        (vertical config presets — 10 verticals)
   → apps/api/src/middleware/auth.ts         (JWT + tenant injection + RBAC)
   → apps/api/src/routes/tenant-auth.ts      (OTP send/verify + auto-provisioning)
-  → apps/api/src/routes/tenant-protected.ts (refresh, logout, /me, team invite/list/delete)
+  → apps/api/src/routes/tenant-protected.ts (refresh, logout, /me + plan info, team invite/list/delete)
   → apps/api/src/routes/admin-auth.ts       (super admin email+password auth)
   → apps/api/src/routes/contacts.ts         (full CRUD + CSV import + timeline + opt-out)
   → apps/api/src/routes/conversations.ts    (inbox: list, thread, reply, assign, notes, quick-replies)
   → apps/api/src/routes/appointments.ts     (providers CRUD + slots + bookings + cancel/complete/no-show/reschedule)
   → apps/api/src/routes/campaigns.ts        (template CRUD + campaign CRUD + send/pause/resume/cancel + delivery stats)
   → apps/api/src/routes/dashboard.ts        (KPI overview + message volume + appointment summary + conversation analytics)
+  → apps/api/src/routes/billing.ts          (Razorpay integration + plans + subscriptions + payments + usage + limits)
   → apps/api/src/routes/health.ts           (GET /health + /health/ready)
   → apps/api/src/app.ts                     (Fastify app builder + route registration)
   → apps/api/src/server.ts                  (Fastify server entry point — port 4000)
+  → apps/api/src/env.ts                     (Zod env validation + Razorpay optional keys)
   → apps/api/src/services/otp.ts            (OTP generation + Redis storage + verification)
   → apps/api/src/seed-wa.ts                 (utility: seed waPhoneId on tenant via Prisma)
   → packages/whatsapp-sdk/src/client.ts     (Meta Cloud API typed client — WhatsAppClient class)
@@ -746,4 +765,4 @@ After completing a step, update **only** the `CURRENT STATUS` section:
 
 ---
 
-*Last Updated: April 29, 2026 | Phase 1 Step 7 of 11 | E2E 173/173 passing*
+*Last Updated: April 29, 2026 | Phase 1 Step 9 of 11 | E2E 266/267 passing*
