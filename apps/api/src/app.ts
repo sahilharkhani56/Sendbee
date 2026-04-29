@@ -13,6 +13,7 @@ import { appointmentRoutes } from "./routes/appointments";
 import { campaignRoutes } from "./routes/campaigns";
 import { dashboardRoutes } from "./routes/dashboard";
 import { billingRoutes } from "./routes/billing";
+import { settingsRoutes } from "./routes/settings";
 
 export async function buildApp() {
   const app = Fastify({
@@ -47,6 +48,7 @@ export async function buildApp() {
   await app.register(campaignRoutes);         // /v1/templates/*, /v1/campaigns/*
   await app.register(dashboardRoutes);        // /v1/dashboard/*
   await app.register(billingRoutes);          // /v1/billing/*
+  await app.register(settingsRoutes);         // /v1/settings/*
 
   return app;
 }

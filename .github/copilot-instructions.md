@@ -29,9 +29,9 @@ Type `/graphify` in Copilot Chat to build or update the knowledge graph.
 
 ```
 PHASE:         Phase 1 — Foundation MVP (Weeks 1–8)
-CURRENT STEP:  Step 10 — Settings & Team
+CURRENT STEP:  Step 11 — Production Deployment
 STEP STATUS:   NOT STARTED
-COMPLETED:     Step 0 (Scaffolding), Step 1 (DB Schema), Step 2 (Auth + 3-Tier), Step 3 (WhatsApp Integration), Step 4 (Contact Management), Step 5 (Conversation Inbox), Step 6 (Appointment System), Step 7 (Campaign & Broadcast), Step 8 (Dashboard & Analytics), Step 9 (Billing & Subscription)
+COMPLETED:     Step 0 (Scaffolding), Step 1 (DB Schema), Step 2 (Auth + 3-Tier), Step 3 (WhatsApp Integration), Step 4 (Contact Management), Step 5 (Conversation Inbox), Step 6 (Appointment System), Step 7 (Campaign & Broadcast), Step 8 (Dashboard & Analytics), Step 9 (Billing & Subscription), Step 10 (Settings & Team)
 
 E2E TEST STATUS (Steps 0–7):
   ✅ 266 passed / 1 failed / 267 total (April 29, 2026)
@@ -119,14 +119,20 @@ WHAT IS BUILT SO FAR:
   ✅ Check limits API — quick limit check endpoint for frontend gating
   ✅ Payment verification — Razorpay signature verification (HMAC SHA256 of payment_id|subscription_id)
   ✅ RBAC billing permissions — BILLING_VIEW and BILLING_MANAGE (owner+admin only)
+  ✅ Settings routes — WhatsApp linking (encrypted token, AES-256-GCM), business profile, hours, away message
+  ✅ WhatsApp account linking — PUT/GET/DELETE with access token encryption at rest
+  ✅ Business profile API — name, email, address, city, state, pincode, timezone, logo, website
+  ✅ Business hours configuration — per-day open/close with validation (open < close)
+  ✅ Away message configuration — enabled/disabled toggle + outsideHoursOnly option
+  ✅ Settings aggregate endpoint — GET /v1/settings/all (single fetch for frontend)
 
-CURRENT TASK (Step 10): Settings & Team
-  → WhatsApp account linking (wa_phone_id + business_id + access_token encrypted)
-  → Business profile (name, address, logo, timezone)
-  → Business hours configuration
-  → Away message configuration
+CURRENT TASK (Step 11): Production Deployment
+  → Dockerfiles for each service
+  → CI/CD pipeline (GitHub Actions)
+  → AWS ECS + RDS + ElastiCache IaC
+  → Environment-specific configs
 
-NEXT STEP (Step 11): Production Deployment
+NEXT STEP: Frontend (Next.js)
 
 BLOCKERS / DECISIONS PENDING:
   → [x] E2E testing completed for Steps 0–7 (266/267 passing)
@@ -150,6 +156,7 @@ FILES MODIFIED SO FAR:
   → apps/api/src/routes/campaigns.ts        (template CRUD + campaign CRUD + send/pause/resume/cancel + delivery stats)
   → apps/api/src/routes/dashboard.ts        (KPI overview + message volume + appointment summary + conversation analytics)
   → apps/api/src/routes/billing.ts          (Razorpay integration + plans + subscriptions + payments + usage + limits)
+  → apps/api/src/routes/settings.ts         (WhatsApp linking + business profile + hours + away message)
   → apps/api/src/routes/health.ts           (GET /health + /health/ready)
   → apps/api/src/app.ts                     (Fastify app builder + route registration)
   → apps/api/src/server.ts                  (Fastify server entry point — port 4000)
@@ -535,20 +542,20 @@ Update `[ ]` to `[x]` as you complete features.
 - [x] Appointment summary chart (by status)
 - [x] Dashboard Redis cache (30s TTL)
 
-### 1I. Settings
-- [ ] WhatsApp account linking (wa_phone_id + business_id + access_token encrypted)
-- [ ] Business profile (name, address, logo, timezone)
-- [ ] Business hours configuration
-- [ ] Away message configuration
+### 1I. Settings ✅
+- [x] WhatsApp account linking (wa_phone_id + business_id + access_token encrypted)
+- [x] Business profile (name, address, logo, timezone)
+- [x] Business hours configuration
+- [x] Away message configuration
 
-### 1J. Billing
-- [ ] Plan selection page (Trial / Starter ₹999 / Growth ₹2,499 / Pro ₹4,999)
-- [ ] Razorpay subscription integration (UPI autopay + card)
-- [ ] Payment success → activate plan
-- [ ] Payment failure → 7-day grace period
-- [ ] 14-day free trial management
-- [ ] Usage tracking (messages, contacts against plan limits)
-- [ ] Plan limit enforcement (block + show upgrade CTA)
+### 1J. Billing ✅
+- [x] Plan selection page (Trial / Starter ₹999 / Growth ₹2,499 / Pro ₹4,999)
+- [x] Razorpay subscription integration (UPI autopay + card)
+- [x] Payment success → activate plan
+- [x] Payment failure → 7-day grace period
+- [x] 14-day free trial management
+- [x] Usage tracking (messages, contacts against plan limits)
+- [x] Plan limit enforcement (block + show upgrade CTA)
 
 ### 1K. Frontend — Next.js
 - [ ] Login page (phone → OTP → verify → dashboard)
