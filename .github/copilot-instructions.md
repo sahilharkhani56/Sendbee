@@ -29,9 +29,9 @@ Type `/graphify` in Copilot Chat to build or update the knowledge graph.
 
 ```
 PHASE:         Phase 1 — Foundation MVP (Weeks 1–8)
-CURRENT STEP:  Step 11 — Production Deployment
+CURRENT STEP:  Frontend (Next.js 14)
 STEP STATUS:   NOT STARTED
-COMPLETED:     Step 0 (Scaffolding), Step 1 (DB Schema), Step 2 (Auth + 3-Tier), Step 3 (WhatsApp Integration), Step 4 (Contact Management), Step 5 (Conversation Inbox), Step 6 (Appointment System), Step 7 (Campaign & Broadcast), Step 8 (Dashboard & Analytics), Step 9 (Billing & Subscription), Step 10 (Settings & Team)
+COMPLETED:     Step 0 (Scaffolding), Step 1 (DB Schema), Step 2 (Auth + 3-Tier), Step 3 (WhatsApp Integration), Step 4 (Contact Management), Step 5 (Conversation Inbox), Step 6 (Appointment System), Step 7 (Campaign & Broadcast), Step 8 (Dashboard & Analytics), Step 9 (Billing & Subscription), Step 10 (Settings & Team), Backend Gaps (Socket.io, Reminders, Media, Leaves, CI/CD)
 
 E2E TEST STATUS (Steps 0–7):
   ✅ 266 passed / 1 failed / 267 total (April 29, 2026)
@@ -125,22 +125,41 @@ WHAT IS BUILT SO FAR:
   ✅ Business hours configuration — per-day open/close with validation (open < close)
   ✅ Away message configuration — enabled/disabled toggle + outsideHoursOnly option
   ✅ Settings aggregate endpoint — GET /v1/settings/all (single fetch for frontend)
+  ✅ Socket.io real-time server — JWT auth, tenant rooms, typing indicators, emit helpers
+  ✅ Socket.io wired into conversation routes — new_message, assignment_change, conversation_update events
+  ✅ Reminder worker (apps/worker) — polls every 60s, sends 24h + 2h WhatsApp template reminders
+  ✅ No-show auto-detection — marks confirmed bookings as no_show after 30min grace period
+  ✅ No-show follow-up — sends template message the next day via WhatsApp
+  ✅ Provider leave/holiday management — GET/POST/DELETE /v1/providers/:id/leaves (Redis-backed)
+  ✅ Leave dates integrated into slot availability API — returns onLeave=true, empty slots
+  ✅ Media download + S3 upload pipeline — Meta CDN → S3/MinIO (apps/webhook/src/media.ts)
+  ✅ WhatsApp SDK enhanced — getMediaUrl() + downloadMedia() methods added
+  ✅ Contact auto-tagging on inbound — new contacts tagged with "new"
+  ✅ CI/CD pipeline enhanced — concurrency control, deploy job placeholder
 
-CURRENT TASK (Step 11): Production Deployment
-  → Dockerfiles for each service
-  → CI/CD pipeline (GitHub Actions)
-  → AWS ECS + RDS + ElastiCache IaC
-  → Environment-specific configs
+CURRENT TASK: Frontend (Next.js 14)
+  → Login page (phone → OTP → verify → dashboard)
+  → Layout (sidebar + header + mobile nav)
+  → Dashboard page (KPI cards + charts)
+  → Inbox page (3-column real-time chat)
+  → Contacts page (table + detail + timeline)
+  → Appointments page (calendar + booking)
+  → Settings pages (4 tabs)
+  → Campaigns page (list + create + stats)
 
-NEXT STEP: Frontend (Next.js)
+NEXT STEP: Production Deployment (Docker + AWS)
 
 BLOCKERS / DECISIONS PENDING:
   → [x] E2E testing completed for Steps 0–7 (266/267 passing)
+  → [x] Socket.io real-time layer implemented (JWT auth + tenant isolation)
+  → [x] Reminder worker implemented (polling-based, Upstash REST)
+  → [x] No-show detection + follow-up implemented
+  → [x] Holiday/leave management implemented
+  → [x] Media download pipeline implemented
+  → [x] CI/CD pipeline enhanced
   → [ ] Real WhatsApp Cloud API send testing deferred (org network blocks graph.facebook.com)
-  → [ ] Socket.io real-time layer deferred to frontend integration
   → [ ] Super admin seed data needed for admin auth E2E tests
   → [ ] WhatsApp booking flow deferred (requires real WA Cloud API for interactive messages)
-  → [ ] BullMQ reminder worker deferred (Step 6 stores reminder keys; worker processes in apps/worker)
 
 FILES MODIFIED SO FAR:
   → packages/database/prisma/schema.prisma  (complete schema — 15 models including billing)
@@ -163,11 +182,15 @@ FILES MODIFIED SO FAR:
   → apps/api/src/env.ts                     (Zod env validation + Razorpay optional keys)
   → apps/api/src/services/otp.ts            (OTP generation + Redis storage + verification)
   → apps/api/src/seed-wa.ts                 (utility: seed waPhoneId on tenant via Prisma)
-  → packages/whatsapp-sdk/src/client.ts     (Meta Cloud API typed client — WhatsAppClient class)
+  → packages/whatsapp-sdk/src/client.ts     (Meta Cloud API typed client — WhatsAppClient class + getMediaUrl + downloadMedia)
   → apps/webhook/src/server.ts              (webhook receiver + HMAC SHA256 verification)
-  → apps/webhook/src/whatsapp-webhook.ts    (inbound message + status update processing)
+  → apps/webhook/src/whatsapp-webhook.ts    (inbound message + status update processing + auto-tag "new")
   → apps/webhook/src/redis.ts               (dedup SETNX + 24h session window tracking)
   → apps/webhook/src/env.ts                 (Zod env validation for webhook service)
+  → apps/webhook/src/media.ts               (Media download from Meta CDN + S3/MinIO upload)
+  → apps/api/src/socket.ts                  (Socket.io server — JWT auth, tenant rooms, emit helpers)
+  → apps/worker/src/index.ts                (Reminder worker — 24h/2h reminders + no-show detection + follow-up)
+  → .github/workflows/ci.yml               (CI/CD — lint, type-check, build + deploy placeholder)
   → e2e-test.cjs                            (E2E test suite — 267 tests, Steps 0–7)
 ```
 
@@ -435,7 +458,7 @@ Update `[ ]` to `[x]` as you complete features.
 ### 1A. Project Foundation ✅
 - [x] Monorepo scaffolding (Turborepo + pnpm)
 - [x] Docker Compose (PostgreSQL + Redis + MinIO)
-- [ ] CI/CD pipeline (GitHub Actions)
+- [x] CI/CD pipeline (GitHub Actions)
 - [x] Shared TypeScript config (strict mode)
 - [x] ESLint + Prettier + Husky
 - [x] Environment variable management + Zod validation
@@ -487,7 +510,7 @@ Update `[ ]` to `[x]` as you complete features.
 - [x] 24h session window detection (Redis TTL)
 - [x] Phone number normalization (all Indian formats → E.164)
 - [x] Webhook deduplication (Redis SETNX)
-- [ ] Media download + S3 upload pipeline
+- [x] Media download + S3 upload pipeline
 
 ### 1E. Contact Management ✅
 - [x] Contact list API (cursor pagination, filters)
@@ -500,7 +523,7 @@ Update `[ ]` to `[x]` as you complete features.
 - [x] CSV import async (BullMQ job + progress tracking)
 - [x] CSV import duplicate handling
 - [x] Opt-out flag management (auto-detect STOP keyword)
-- [ ] Auto-create contact on first inbound message
+- [x] Auto-create contact on first inbound message
 
 ### 1F. Conversation Inbox ✅
 - [x] Conversation list API (sorted by last_message_at DESC)
@@ -511,9 +534,9 @@ Update `[ ]` to `[x]` as you complete features.
 - [x] Conversation status management (open → resolved)
 - [x] Unread count tracking (increment on inbound, reset on open)
 - [x] Mark as read
-- [ ] Real-time updates (Socket.io)
-- [ ] WebSocket authentication (JWT on handshake)
-- [ ] WebSocket tenant isolation (room per tenant)
+- [x] Real-time updates (Socket.io)
+- [x] WebSocket authentication (JWT on handshake)
+- [x] WebSocket tenant isolation (room per tenant)
 - [x] Quick reply templates (staff pre-saved replies)
 - [x] Internal notes on conversation (not sent to patient)
 
@@ -521,19 +544,19 @@ Update `[ ]` to `[x]` as you complete features.
 - [x] Provider CRUD (name, specialization, photo, slot_duration)
 - [x] Working hours configuration (per-provider per-day)
 - [x] Break hours configuration (lunch, prayer time)
-- [ ] Holiday/leave management (mark dates unavailable)
+- [x] Holiday/leave management (mark dates unavailable)
 - [x] Slot availability API
 - [x] Manual booking from dashboard
 - [ ] WhatsApp booking flow (patient types "book" → guided flow)
 - [ ] Booking state machine in Redis (TTL 10min)
 - [x] Double-booking prevention (EXCLUSION constraint + distributed lock)
 - [ ] Booking confirmation WhatsApp message
-- [ ] Auto-reminder 24h before (BullMQ delayed job)
-- [ ] Auto-reminder 2h before (BullMQ delayed job)
+- [x] Auto-reminder 24h before (BullMQ delayed job)
+- [x] Auto-reminder 2h before (BullMQ delayed job)
 - [x] Appointment cancellation (slot freed + confirmation sent)
 - [x] Appointment rescheduling (atomic: cancel old + book new)
 - [x] No-show auto-detection (cron: end_time + 30min → flag)
-- [ ] No-show follow-up message (next day)
+- [x] No-show follow-up message (next day)
 - [x] Today's appointment dashboard card
 
 ### 1H. Basic Dashboard
@@ -1133,4 +1156,4 @@ PHASE D — Backend Completion (Parallel):
 
 ---
 
-*Last Updated: April 29, 2026 | Phase 1 Step 10 of 11 | E2E 266/267 passing*
+*Last Updated: April 29, 2026 | Phase 1 Backend Complete | Frontend Next | E2E 266/267 passing*
