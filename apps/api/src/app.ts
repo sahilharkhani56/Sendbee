@@ -9,6 +9,9 @@ import { tenantProtectedRoutes } from "./routes/tenant-protected";
 import { adminAuthRoutes } from "./routes/admin-auth";
 import { contactRoutes } from "./routes/contacts";
 import { conversationRoutes } from "./routes/conversations";
+import { appointmentRoutes } from "./routes/appointments";
+import { campaignRoutes } from "./routes/campaigns";
+import { dashboardRoutes } from "./routes/dashboard";
 
 export async function buildApp() {
   const app = Fastify({
@@ -39,6 +42,9 @@ export async function buildApp() {
   await app.register(adminAuthRoutes);        // /admin/auth/*, /admin/tenants/*
   await app.register(contactRoutes);          // /v1/contacts/*
   await app.register(conversationRoutes);     // /v1/conversations/*, /v1/quick-replies/*
+  await app.register(appointmentRoutes);      // /v1/providers/*, /v1/appointments/*
+  await app.register(campaignRoutes);         // /v1/templates/*, /v1/campaigns/*
+  await app.register(dashboardRoutes);        // /v1/dashboard/*
 
   return app;
 }
