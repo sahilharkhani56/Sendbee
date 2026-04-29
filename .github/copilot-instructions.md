@@ -772,4 +772,365 @@ After completing a step, update **only** the `CURRENT STATUS` section:
 
 ---
 
-*Last Updated: April 29, 2026 | Phase 1 Step 9 of 11 | E2E 266/267 passing*
+## FRONTEND IMPLEMENTATION GUIDE — NEXT.JS 14
+
+> **You are a senior frontend architect specializing in Next.js 14, SaaS dashboards, and real-time systems.**
+> Build a pixel-perfect, modern (2025 design standards), fully responsive frontend.
+
+### Tech Stack (FINAL — non-negotiable)
+
+| Layer | Choice | Notes |
+|-------|--------|-------|
+| Framework | Next.js 14 (App Router) | `apps/web/` — SSR + Client components |
+| Language | TypeScript (strict) | Shared types from `packages/shared` |
+| Styling | Tailwind CSS + shadcn/ui | Accessible, customizable components |
+| State (client) | Zustand | Auth state, UI state, sidebar collapse |
+| State (server) | TanStack Query v5 | Caching, refetching, optimistic updates |
+| Real-time | Socket.io client | Live inbox, status updates, notifications |
+| Forms | React Hook Form + Zod | Shared validation schemas with backend |
+| Tables | TanStack Table | Virtual scrolling for contacts/appointments |
+| Charts | Recharts | Dashboard KPI charts |
+| Date/Time | date-fns | Lightweight, tree-shakeable |
+| Icons | Lucide React | Consistent icon set |
+| Toast/Notifications | sonner | Clean toast notifications |
+| File uploads | react-dropzone | CSV import, media upload |
+
+### Design System & UX Requirements
+
+```
+DESIGN PRINCIPLES:
+1. Mobile-first responsive (360px → 1920px)
+2. Dense but not cluttered — CRM users work fast
+3. Clear visual hierarchy — primary actions prominent
+4. Smooth interactions — hover states, loading skeletons, transitions
+5. Real-time ready — optimistic updates, live indicators
+6. Indian SMB optimized — simple, practical, no over-complex UX
+7. Fast to scan and act — minimal clicks to complete any task
+8. Dark mode support (localStorage toggle)
+
+COLOR PALETTE:
+  Primary:    #0F766E (teal-700) — trust, healthcare feel
+  Secondary:  #1E40AF (blue-800) — links, interactive elements
+  Success:    #15803D (green-700) — confirmed, delivered
+  Warning:    #B45309 (amber-700) — pending, grace period
+  Danger:     #B91C1C (red-700) — failed, cancelled, expired
+  Background: #FFFFFF (light) / #0F172A (dark)
+  Surface:    #F8FAFC (light) / #1E293B (dark)
+  Border:     #E2E8F0 (light) / #334155 (dark)
+  Text:       #0F172A (light) / #F1F5F9 (dark)
+
+TYPOGRAPHY:
+  Font:       Inter (Google Fonts) — clean, modern, excellent readability
+  Headings:   font-semibold, tracking-tight
+  Body:       font-normal, text-sm (14px) for density
+  Monospace:  JetBrains Mono — for phone numbers, IDs
+
+SPACING:
+  Use Tailwind's spacing scale consistently
+  Cards: p-4 or p-6
+  Sections: space-y-6
+  Lists: space-y-2 or space-y-3
+
+COMPONENT PATTERNS:
+  - Skeleton loaders for all async content (never empty states with spinners)
+  - Empty states with illustration + CTA ("No contacts yet — Import CSV")
+  - Confirmation modals for destructive actions
+  - Toast for success/error feedback (bottom-right)
+  - Command palette (Cmd+K) for power users
+  - Breadcrumbs on detail pages
+  - Keyboard shortcuts for common actions
+```
+
+### Frontend File Structure
+
+```
+apps/web/
+├── app/
+│   ├── (auth)/
+│   │   ├── login/page.tsx           → Phone + OTP login
+│   │   └── layout.tsx               → Centered, no sidebar
+│   ├── (onboarding)/
+│   │   ├── setup/page.tsx           → 3-step wizard
+│   │   └── layout.tsx               → Progress bar, no sidebar
+│   ├── (dashboard)/
+│   │   ├── layout.tsx               → Sidebar + Header + Main
+│   │   ├── page.tsx                 → Dashboard (KPI + charts)
+│   │   ├── inbox/
+│   │   │   └── page.tsx             → 3-column inbox
+│   │   ├── contacts/
+│   │   │   ├── page.tsx             → Table + search + filters
+│   │   │   └── [id]/page.tsx        → Contact detail + timeline
+│   │   ├── appointments/
+│   │   │   └── page.tsx             → Calendar + list view
+│   │   ├── campaigns/
+│   │   │   ├── page.tsx             → Campaign list
+│   │   │   └── [id]/page.tsx        → Campaign detail + stats
+│   │   ├── settings/
+│   │   │   ├── page.tsx             → General settings
+│   │   │   ├── whatsapp/page.tsx    → WA linking
+│   │   │   ├── team/page.tsx        → Team management
+│   │   │   └── billing/page.tsx     → Plans + payments
+│   │   └── templates/
+│   │       └── page.tsx             → Template management
+│   ├── layout.tsx                   → Root layout (providers)
+│   └── globals.css                  → Tailwind + custom styles
+├── components/
+│   ├── ui/                          → shadcn/ui components
+│   ├── layout/
+│   │   ├── sidebar.tsx              → Collapsible sidebar nav
+│   │   ├── header.tsx               → Top bar (search, notifications, profile)
+│   │   └── mobile-nav.tsx           → Bottom nav for mobile
+│   ├── inbox/
+│   │   ├── conversation-list.tsx    → Left panel
+│   │   ├── chat-thread.tsx          → Center panel (messages)
+│   │   ├── message-bubble.tsx       → Individual message
+│   │   ├── reply-box.tsx            → Input + send button
+│   │   └── contact-sidebar.tsx      → Right panel (contact info)
+│   ├── contacts/
+│   │   ├── contacts-table.tsx       → TanStack Table
+│   │   ├── contact-card.tsx         → Mobile card view
+│   │   └── import-dialog.tsx        → CSV import modal
+│   ├── appointments/
+│   │   ├── calendar-view.tsx        → Day/week calendar
+│   │   ├── booking-dialog.tsx       → New booking modal
+│   │   └── slot-picker.tsx          → Time slot selector
+│   ├── dashboard/
+│   │   ├── kpi-cards.tsx            → 4 stat cards
+│   │   ├── message-chart.tsx        → 7-day volume chart
+│   │   └── appointment-chart.tsx    → Status breakdown
+│   └── shared/
+│       ├── data-table.tsx           → Reusable table component
+│       ├── loading-skeleton.tsx     → Skeleton loader
+│       ├── empty-state.tsx          → Illustration + CTA
+│       ├── confirm-dialog.tsx       → Destructive action modal
+│       └── phone-input.tsx          → Indian phone formatter
+├── lib/
+│   ├── api.ts                       → Fetch wrapper (auth headers, error handling)
+│   ├── socket.ts                    → Socket.io client singleton
+│   ├── auth.ts                      → Zustand auth store
+│   └── utils.ts                     → cn(), formatPhone(), formatDate()
+├── hooks/
+│   ├── use-auth.ts                  → Auth state + actions
+│   ├── use-socket.ts                → Socket.io connection + events
+│   ├── use-contacts.ts              → TanStack Query hooks
+│   ├── use-conversations.ts         → Inbox query hooks
+│   ├── use-appointments.ts          → Booking query hooks
+│   └── use-debounce.ts              → Search debounce
+└── types/
+    └── index.ts                     → Re-export from packages/shared
+```
+
+### Page Specifications
+
+#### Login Page (`/login`)
+- Clean centered card (max-w-md)
+- Phone input with +91 prefix (Indian format)
+- OTP input (6 digits, auto-focus next)
+- Loading state on submit
+- Error toast on invalid OTP
+- Auto-redirect to `/` on success
+
+#### Onboarding Wizard (`/setup`)
+- Step 1: Business name, vertical (dropdown), timezone
+- Step 2: Connect WhatsApp (paste Phone ID + Token)
+- Step 3: Invite team (optional, can skip)
+- Progress bar at top
+- "Skip" + "Next" buttons
+- Auto-redirect to dashboard on complete
+
+#### Dashboard (`/`)
+- 4 KPI cards: Messages today, Open conversations, Today's appointments, Total contacts
+- Message volume chart (7-day bar)
+- Appointment status pie/donut chart
+- Quick actions: "New Contact", "Send Broadcast", "Book Appointment"
+- Recent conversations list (last 5)
+
+#### Inbox (`/inbox`) — MOST COMPLEX PAGE
+- 3-column layout (desktop): Conversations | Chat | Contact Sidebar
+- 2-column on tablet, 1-column on mobile (stack with back navigation)
+- Conversation list: Avatar, name, last message preview, time, unread badge
+- Chat thread: Message bubbles (sent=right/teal, received=left/gray), timestamps
+- Reply box: Text input, quick replies dropdown, template button, send
+- Contact sidebar: Name, phone, tags, appointments, notes
+- Real-time: New messages appear instantly (Socket.io)
+- Typing indicator, online status, delivery ticks (✓✓)
+- Filter bar: All | Mine | Unassigned | Open | Resolved
+
+#### Contacts (`/contacts`)
+- Table view (desktop): Name, Phone, Tags, Last Message, Created
+- Card view (mobile): Compact cards with avatar
+- Search bar (debounced, searches name + phone)
+- Tag filter (multi-select chips)
+- Pagination (cursor-based, "Load more" button)
+- Bulk actions: Tag, Delete, Export
+- Import button → CSV upload dialog with progress
+- Click row → `/contacts/[id]` detail page
+
+#### Contact Detail (`/contacts/[id]`)
+- Profile header: Name, phone, tags, opt-out badge
+- Timeline: Interleaved messages + appointments + notes (chronological)
+- Edit button → inline edit mode
+- Quick actions: Send message, Book appointment, Add note
+
+#### Appointments (`/appointments`)
+- Toggle: Calendar view | List view
+- Calendar: Day or Week view with time slots
+- Color-coded: Confirmed=blue, Completed=green, No-show=red, Cancelled=gray
+- "Book Appointment" FAB → dialog with provider + slot picker
+- List view: Filterable table (date, provider, status)
+- Today's view prominent at top
+
+#### Settings (`/settings/*`)
+- Tabbed layout: General | WhatsApp | Team | Billing
+- General: Business profile form (name, address, hours, away message)
+- WhatsApp: Connection status, linked phone, unlink button
+- Team: Table of members, invite button, role dropdown, remove
+- Billing: Current plan card, usage meters, payment history, upgrade button
+
+### API Integration Pattern
+
+```typescript
+// lib/api.ts — Centralized fetch wrapper
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+
+async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
+  const token = useAuthStore.getState().accessToken;
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(token && { Authorization: `Bearer ${token}` }),
+      ...options?.headers,
+    },
+  });
+  if (res.status === 401) {
+    // Trigger token refresh or redirect to login
+    await refreshToken();
+    // Retry once
+  }
+  if (!res.ok) {
+    const error = await res.json();
+    throw new ApiError(error.error.code, error.error.message);
+  }
+  return res.json();
+}
+```
+
+### Socket.io Integration Pattern
+
+```typescript
+// lib/socket.ts
+import { io, Socket } from "socket.io-client";
+
+let socket: Socket | null = null;
+
+export function connectSocket(token: string) {
+  socket = io(process.env.NEXT_PUBLIC_WS_URL!, {
+    auth: { token },
+    transports: ["websocket"],
+  });
+
+  socket.on("connect", () => console.log("Socket connected"));
+  socket.on("new_message", (data) => {
+    // Invalidate TanStack Query cache for conversations
+    queryClient.invalidateQueries({ queryKey: ["conversations"] });
+  });
+  socket.on("message_status", (data) => {
+    // Update message delivery status in cache
+  });
+  socket.on("assignment_change", (data) => {
+    // Update conversation assignment
+  });
+}
+```
+
+---
+
+## REMAINING FEATURES TO IMPLEMENT (Post-Step 10)
+
+### Backend Gaps (Must complete before/during frontend)
+
+| # | Feature | Priority | Effort | Notes |
+|---|---------|----------|--------|-------|
+| 1 | Socket.io real-time server | P0 | 2 days | New package or add to API. Rooms per tenant. |
+| 2 | WebSocket JWT auth on handshake | P0 | 0.5 day | Verify token, inject tenantId |
+| 3 | WebSocket tenant isolation | P0 | 0.5 day | Room-based: `tenant:{id}` |
+| 4 | Auto-create contact on inbound | P0 | 0.5 day | Webhook → if contact not found → create |
+| 5 | BullMQ reminder worker | P0 | 2 days | Process reminder keys → send WhatsApp template |
+| 6 | WhatsApp booking flow | P0 | 3 days | Interactive messages → state machine → book |
+| 7 | Booking confirmation message | P0 | 0.5 day | Auto-send template on booking |
+| 8 | Auto-reminder 24h before | P0 | 1 day | BullMQ delayed job → template |
+| 9 | Auto-reminder 2h before | P0 | 0.5 day | Same worker, different delay |
+| 10 | No-show follow-up message | P1 | 0.5 day | Cron → next day template |
+| 11 | Media download + S3 upload | P1 | 1 day | Download from Meta CDN → MinIO/S3 |
+| 12 | Holiday/leave management | P1 | 0.5 day | Mark provider dates unavailable |
+| 13 | CI/CD pipeline (GitHub Actions) | P1 | 1 day | lint → type-check → test → build → deploy |
+| 14 | OTP via WhatsApp channel | P2 | 0.5 day | Alternative to SMS |
+
+### Frontend Pages (Must build for MVP)
+
+| # | Page | Priority | Effort | Description |
+|---|------|----------|--------|-------------|
+| 1 | Login + OTP | P0 | 1 day | Phone → OTP → verify → redirect |
+| 2 | Onboarding wizard | P0 | 1.5 days | 3-step: business → WA → team |
+| 3 | Dashboard | P0 | 1.5 days | KPI cards + charts + quick actions |
+| 4 | Inbox (3-column) | P0 | 4 days | Most complex — real-time chat |
+| 5 | Contacts table + detail | P0 | 2 days | Table + search + timeline view |
+| 6 | Appointments calendar | P0 | 2.5 days | Calendar + booking dialog |
+| 7 | Campaigns list + detail | P1 | 1.5 days | List + create + stats |
+| 8 | Templates management | P1 | 1 day | CRUD for WA templates |
+| 9 | Settings (4 tabs) | P0 | 2 days | General, WA, Team, Billing |
+| 10 | Billing page | P0 | 1 day | Plan card + usage + payments |
+| 11 | Mobile responsive | P0 | 2 days | Bottom nav, stacked layouts |
+| 12 | Command palette (Cmd+K) | P2 | 0.5 day | Power user navigation |
+
+### Value-Add Features (Make product more sellable)
+
+| # | Feature | Category | Why It Increases Value |
+|---|---------|----------|----------------------|
+| 1 | **Payment links via WhatsApp** | Revenue | Clinic sends "Pay ₹500" → Razorpay link in WhatsApp |
+| 2 | **Basic keyword automation** | Efficiency | "hours" → auto-reply clinic hours. "book" → start flow |
+| 3 | **Patient feedback collection** | Insights | Post-appointment: "Rate 1-5" → track satisfaction |
+| 4 | **Prescription/report sharing** | Healthcare | Send PDF via WhatsApp with tracking |
+| 5 | **Waitlist notifications** | Revenue | Cancelled slot → notify next in waitlist |
+| 6 | **Multi-language support** | India market | Hindi + English templates/UI |
+| 7 | **Click-to-WhatsApp ad tracking** | Marketing | Track which ad → which patient → which booking |
+| 8 | **Smart scheduling** | UX | "Book with any available doctor today" |
+| 9 | **Revenue dashboard** | Business value | Show ₹ earned from appointments this month |
+| 10 | **Patient recall campaigns** | Retention | "Patients not seen in 90 days" → auto-campaign |
+
+---
+
+## IMPLEMENTATION ORDER (Recommended)
+
+```
+PHASE A — Frontend Foundation (Week 1):
+  → Next.js 14 scaffold + Tailwind + shadcn/ui setup
+  → Auth flow (login, token management, protected routes)
+  → Layout (sidebar, header, mobile nav)
+  → Dashboard page (connect to existing API)
+
+PHASE B — Core Pages (Weeks 2-3):
+  → Inbox page (3-column, connect to conversations API)
+  → Socket.io integration (real-time messages)
+  → Contacts page (table + detail + timeline)
+  → Appointments page (calendar + booking)
+
+PHASE C — Complete MVP (Week 3-4):
+  → Settings pages (all 4 tabs)
+  → Campaigns page (list + create + stats)
+  → Onboarding wizard
+  → Billing page
+  → Mobile responsive polish
+
+PHASE D — Backend Completion (Parallel):
+  → Socket.io server + WebSocket auth
+  → BullMQ reminder worker
+  → WhatsApp booking flow
+  → Auto-contact creation on inbound
+  → CI/CD pipeline
+```
+
+---
+
+*Last Updated: April 29, 2026 | Phase 1 Step 10 of 11 | E2E 266/267 passing*
