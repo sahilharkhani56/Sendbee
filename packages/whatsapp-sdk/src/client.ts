@@ -184,9 +184,30 @@ export class WhatsAppClient {
         }
       );
 
+  /**
+   * Get the download URL for a media file from Meta's servers.
+   * Returns the URL and mime type. The URL is temporary (expires in ~5 min).
+   */
+  async getMediaUrl(mediaId: string): Promise<{ url: string; mimeType: string; fileSize: number }> {
+    try {
+      const response = await this.ax.get(`/${mediaId}`);
       return {
-        messageId: response.data.messages?.[0]?.id,
+        url: response.data.url,
+        mimeType: response.data.mime_type,
+        fileSize: response.data.file_size,
       };
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Download media binary from Meta's CDN URL (requires auth header).
+   */
+  async downloadMedia(url: string): Promise<Buffer> {
+    try {
+      const response = await this.ax.get(url, { responseType: "arraybuffer" });
+      return Buffer.from(response.data);
     } catch (error) {
       throw this.handleError(error);
     }

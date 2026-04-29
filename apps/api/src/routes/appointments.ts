@@ -312,6 +312,26 @@ export async function appointmentRoutes(app: FastifyInstance) {
         const workingHours = (provider.workingHours ?? {}) as Record<string, { start: string; end: string }>;
         const breakHours = (provider.breakHours ?? []) as { start: string; end: string }[];
 
+        // Check if provider is on leave this date
+        const leaveKey = `provider_leaves:${request.tenantId}:${id}`;
+        const leavesRaw = await redis.get(leaveKey);
+        const leaves: string[] = leavesRaw ? (typeof leavesRaw === "string" ? JSON.parse(leavesRaw) : leavesRaw) : [];
+        if (leaves.includes(date)) {
+          return {
+            data: {
+              providerId: id,
+              date,
+              dayOfWeek,
+              slotDuration: provider.slotDuration,
+              slots: [],
+              totalSlots: 0,
+              availableSlots: 0,
+              bookedSlots: 0,
+              onLeave: true,
+            },
+          };
+        }
+
         const allSlots = generateSlots(workingHours, breakHours, provider.slotDuration, dayOfWeek);
 
         // Fetch existing bookings for this provider on this date
@@ -356,6 +376,93 @@ export async function appointmentRoutes(app: FastifyInstance) {
             bookedSlots: allSlots.length - available.length,
           },
         };
+      },
+    });
+
+    // ═══ PROVIDER LEAVES / HOLIDAYS ═════════════════════
+
+    /** Get leave dates for a provider */
+    protectedApp.get("/v1/providers/:id/leaves", {
+      preHandler: [requirePermission(PERMISSIONS.BOOKINGS_VIEW)],
+      handler: async (request, reply) => {
+        const { id } = request.params as { id: string };
+        const provider = await prisma.provider.findFirst({
+          where: { id, tenantId: request.tenantId!, isActive: true },
+          select: { id: true },
+        });
+        if (!provider) {
+          return reply.status(404).send({
+            error: { code: "PROVIDER_NOT_FOUND", message: "Provider not found" },
+          });
+        }
+
+        const leaveKey = `provider_leaves:${request.tenantId}:${id}`;
+        const leavesRaw = await redis.get(leaveKey);
+        const leaves: string[] = leavesRaw ? (typeof leavesRaw === "string" ? JSON.parse(leavesRaw) : leavesRaw) : [];
+        return { data: leaves };
+      },
+    });
+
+    /** Add leave dates for a provider */
+    protectedApp.post("/v1/providers/:id/leaves", {
+      preHandler: [requirePermission(PERMISSIONS.BOOKINGS_EDIT)],
+      handler: async (request, reply) => {
+        const { id } = request.params as { id: string };
+        const schema = z.object({
+          dates: z.array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).min(1).max(90),
+        });
+        const parsed = schema.safeParse(request.body);
+        if (!parsed.success) {
+          return reply.status(400).send({
+            error: { code: "VALIDATION_ERROR", details: parsed.error.flatten().fieldErrors },
+          });
+        }
+
+        const provider = await prisma.provider.findFirst({
+          where: { id, tenantId: request.tenantId!, isActive: true },
+          select: { id: true },
+        });
+        if (!provider) {
+          return reply.status(404).send({
+            error: { code: "PROVIDER_NOT_FOUND", message: "Provider not found" },
+          });
+        }
+
+        const leaveKey = `provider_leaves:${request.tenantId}:${id}`;
+        const leavesRaw = await redis.get(leaveKey);
+        const existing: string[] = leavesRaw ? (typeof leavesRaw === "string" ? JSON.parse(leavesRaw) : leavesRaw) : [];
+
+        const merged = [...new Set([...existing, ...parsed.data.dates])].sort();
+        await redis.set(leaveKey, JSON.stringify(merged));
+
+        return reply.status(201).send({ data: merged });
+      },
+    });
+
+    /** Remove leave dates for a provider */
+    protectedApp.delete("/v1/providers/:id/leaves", {
+      preHandler: [requirePermission(PERMISSIONS.BOOKINGS_EDIT)],
+      handler: async (request, reply) => {
+        const { id } = request.params as { id: string };
+        const schema = z.object({
+          dates: z.array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).min(1),
+        });
+        const parsed = schema.safeParse(request.body);
+        if (!parsed.success) {
+          return reply.status(400).send({
+            error: { code: "VALIDATION_ERROR", details: parsed.error.flatten().fieldErrors },
+          });
+        }
+
+        const leaveKey = `provider_leaves:${request.tenantId}:${id}`;
+        const leavesRaw = await redis.get(leaveKey);
+        const existing: string[] = leavesRaw ? (typeof leavesRaw === "string" ? JSON.parse(leavesRaw) : leavesRaw) : [];
+
+        const toRemove = new Set(parsed.data.dates);
+        const updated = existing.filter((d) => !toRemove.has(d));
+        await redis.set(leaveKey, JSON.stringify(updated));
+
+        return { data: updated };
       },
     });
 

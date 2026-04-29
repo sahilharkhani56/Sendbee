@@ -5,6 +5,7 @@ import { tenantAuthMiddleware, requirePermission } from "../middleware/auth";
 import { PERMISSIONS } from "@whatsapp-crm/shared";
 import { redis } from "../redis";
 import { WhatsAppClient } from "@whatsapp-crm/whatsapp-sdk";
+import { emitToTenant, emitToConversation } from "../socket";
 
 // ─── Schemas ──────────────────────────────────────────────
 
@@ -299,6 +300,17 @@ export async function conversationRoutes(app: FastifyInstance) {
         }
 
         const updated = await prisma.message.findUnique({ where: { id: message.id } });
+
+        // Emit real-time event
+        emitToTenant(request.tenantId!, "new_message", {
+          conversationId: id,
+          message: updated,
+        });
+        emitToConversation(request.tenantId!, id, "new_message", {
+          conversationId: id,
+          message: updated,
+        });
+
         return reply.status(201).send(updated);
       },
     });
@@ -345,6 +357,13 @@ export async function conversationRoutes(app: FastifyInstance) {
           });
         }
 
+        // Emit real-time event
+        emitToTenant(request.tenantId!, "assignment_change", {
+          conversationId: id,
+          assignedTo: parsed.data.assignedTo,
+          assignedBy: request.userId,
+        });
+
         return { id, assignedTo: parsed.data.assignedTo };
       },
     });
@@ -373,6 +392,12 @@ export async function conversationRoutes(app: FastifyInstance) {
           });
         }
 
+        // Emit real-time event
+        emitToTenant(request.tenantId!, "conversation_update", {
+          conversationId: id,
+          changes: { status: parsed.data.status },
+        });
+
         return { id, status: parsed.data.status };
       },
     });
@@ -394,6 +419,12 @@ export async function conversationRoutes(app: FastifyInstance) {
             error: { code: "CONVERSATION_NOT_FOUND", message: "Conversation not found" },
           });
         }
+
+        // Emit real-time event
+        emitToTenant(request.tenantId!, "conversation_update", {
+          conversationId: id,
+          changes: { unreadCount: 0 },
+        });
 
         return { id, unreadCount: 0 };
       },
@@ -434,6 +465,12 @@ export async function conversationRoutes(app: FastifyInstance) {
             status: "delivered",
             sentBy: request.userId,
           },
+        });
+
+        // Emit real-time event (notes visible to team only)
+        emitToConversation(request.tenantId!, id, "new_message", {
+          conversationId: id,
+          message: note,
         });
 
         return reply.status(201).send(note);

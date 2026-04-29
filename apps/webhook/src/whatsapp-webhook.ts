@@ -152,6 +152,7 @@ async function processInboundMessage(
       tenantId,
       phoneE164: from,
       name: profileName,
+      tags: ["new"],
     },
   });
 
