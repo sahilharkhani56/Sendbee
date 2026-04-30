@@ -671,10 +671,10 @@ Update `[ ]` to `[x]` as you complete features.
 - [x] Redirect logic: login → if !onboarded → /setup, else → /
 
 **Step 9 — Templates Page** (app/(dashboard)/templates/page.tsx)
-- [ ] Template card grid with status/category filters
-- [ ] Template editor: split view (form left + live WA phone preview right)
-- [ ] Variable insertion, character count, button builder
-- [ ] Save Draft + Submit for Approval actions
+- [x] Template card grid with status/category filters
+- [x] Template editor: split view (form left + live WA phone preview right)
+- [x] Variable insertion, character count, button builder
+- [x] Save Draft + Submit for Approval actions
 
 **Step 10 — Settings Pages** (app/(dashboard)/settings/*)
 - [ ] 4 tabs: General / WhatsApp / Team / Billing
