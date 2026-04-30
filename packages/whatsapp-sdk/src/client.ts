@@ -184,6 +184,14 @@ export class WhatsAppClient {
         }
       );
 
+      return {
+        messageId: response.data.messages?.[0]?.id,
+      };
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
   /**
    * Get the download URL for a media file from Meta's servers.
    * Returns the URL and mime type. The URL is temporary (expires in ~5 min).

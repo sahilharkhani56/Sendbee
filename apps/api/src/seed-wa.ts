@@ -10,6 +10,12 @@ async function main() {
     process.exit(1);
   }
 
+  // Clear this waPhoneId from any other tenants (prevents webhook routing to wrong tenant)
+  await prisma.tenant.updateMany({
+    where: { waPhoneId, id: { not: tenantId } },
+    data: { waPhoneId: null },
+  });
+
   await prisma.tenant.update({
     where: { id: tenantId },
     data: { waPhoneId, waAccessToken: waAccessToken || undefined },
