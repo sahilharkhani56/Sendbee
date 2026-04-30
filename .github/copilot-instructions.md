@@ -29,8 +29,8 @@ Type `/graphify` in Copilot Chat to build or update the knowledge graph.
 
 ```
 PHASE:         Phase 1 — Foundation MVP (Weeks 1–8)
-CURRENT STEP:  Frontend (Next.js 14)
-STEP STATUS:   NOT STARTED
+CURRENT STEP:  Frontend Step 2 — Dashboard Layout
+STEP STATUS:   IN PROGRESS
 COMPLETED:     Step 0 (Scaffolding), Step 1 (DB Schema), Step 2 (Auth + 3-Tier), Step 3 (WhatsApp Integration), Step 4 (Contact Management), Step 5 (Conversation Inbox), Step 6 (Appointment System), Step 7 (Campaign & Broadcast), Step 8 (Dashboard & Analytics), Step 9 (Billing & Subscription), Step 10 (Settings & Team), Step 11 (Automation Rules), Backend Gaps (Socket.io, Reminders, Media, Leaves, CI/CD, Automations, Booking Confirmation)
 
 E2E TEST STATUS (Steps 0–11):
@@ -145,15 +145,30 @@ WHAT IS BUILT SO FAR:
   ✅ Booking confirmation message — auto-sends WhatsApp template on appointment creation
   ✅ E2E test suite expanded (e2e-test.cjs) — 403 assertions across Steps 0–11
 
-CURRENT TASK: Frontend (Next.js 14)
-  → Login page (phone → OTP → verify → dashboard)
-  → Layout (sidebar + header + mobile nav)
-  → Dashboard page (KPI cards + charts)
-  → Inbox page (3-column real-time chat)
-  → Contacts page (table + detail + timeline)
-  → Appointments page (calendar + booking)
-  → Settings pages (4 tabs)
-  → Campaigns page (list + create + stats)
+CURRENT TASK: Frontend (Next.js 14) — 13 Steps
+  ✅ Step 1: Login page (phone → OTP → verify → dashboard)
+  → Step 2: Dashboard Layout (sidebar + header + mobile nav)
+  → Step 3: Dashboard page (KPI cards + charts)
+  → Step 4: Inbox page (3-column real-time chat)
+  → Step 5: Contacts pages (table + detail + timeline)
+  → Step 6: Appointments page (calendar + booking)
+  → Step 7: Campaigns pages (list + create wizard + stats)
+  → Step 8: Onboarding wizard (3-step: business → WA → team)
+  → Step 9: Templates page (card grid + editor + live preview)
+  → Step 10: Settings pages (4 tabs: General/WA/Team/Billing)
+  → Step 11: Mobile responsive polish (all breakpoints)
+  → Step 12: Command palette (Cmd+K)
+  → Step 13: Automations page (rules CRUD)
+
+FRONTEND FOUNDATION (already built):
+  ✅ Next.js 14 scaffold + Tailwind + shadcn/ui CSS vars + tailwindcss-animate
+  ✅ Zustand auth store (accessToken in memory, refreshToken in cookie)
+  ✅ API client (fetch wrapper, auto JWT, 401 → refresh → retry)
+  ✅ Socket.io client singleton (connectSocket/disconnectSocket + query invalidation)
+  ✅ Middleware auth gate (cookie check → redirect /login)
+  ✅ Type definitions (re-exports from @whatsapp-crm/shared + ApiError class)
+  ✅ App Router structure: (auth)/login, (onboarding)/setup, (dashboard)/* routes
+  ✅ Login page — split panel (teal branding left + form right), PhoneInput (+91 prefix, validation), OtpInput (6 boxes, auto-focus, paste, shake animation), 30s countdown resend, error toasts, redirect on success
 
 NEXT STEP: Production Deployment (Docker + AWS)
 
@@ -592,16 +607,96 @@ Update `[ ]` to `[x]` as you complete features.
 - [x] Usage tracking (messages, contacts against plan limits)
 - [x] Plan limit enforcement (block + show upgrade CTA)
 
-### 1K. Frontend — Next.js
-- [ ] Login page (phone → OTP → verify → dashboard)
-- [ ] Onboarding wizard (3 steps: business details → connect WA → invite team)
-- [ ] Sidebar navigation
-- [ ] Inbox page (3-column: conversation list | chat thread | contact sidebar)
-- [ ] Contacts page (sortable table, search, tag filter, pagination)
-- [ ] Contact detail page (profile + timeline)
-- [ ] Appointments page (calendar day/week view)
-- [ ] Settings pages (Business, WhatsApp, Team, Billing tabs)
-- [ ] Mobile responsive (360px+)
+### 1K. Frontend — Next.js (13 Steps, see docs/frontend.txt for full specs)
+
+**Foundation (already built):**
+- [x] Next.js 14 scaffold + Tailwind + shadcn/ui setup
+- [x] Auth store (Zustand), API client (fetch wrapper + 401 refresh), Socket.io client
+- [x] Middleware auth gate (cookie-based refresh token check)
+- [x] Type definitions (re-exports from @whatsapp-crm/shared)
+
+**Step 1 — Login Page** (app/(auth)/login/page.tsx)
+- [x] Phone input with +91 prefix + validation
+- [x] 6-digit OTP input (auto-focus next, paste support)
+- [x] POST /v1/auth/otp/send → POST /v1/auth/otp/verify → store tokens → redirect /
+- [x] Loading states, error toasts, countdown timer for resend
+
+**Step 2 — Dashboard Layout** (app/(dashboard)/layout.tsx)
+- [ ] Sidebar (240px, dark #111B21, collapsible → 64px icons only)
+- [ ] Header (56px, search trigger for Cmd+K, notifications bell, profile dropdown)
+- [ ] Mobile bottom nav (56px fixed, 5 icons: Home/Inbox/Contacts/Appointments/More)
+- [ ] Sidebar collapsed state persisted in localStorage
+
+**Step 3 — Dashboard Page** (app/(dashboard)/page.tsx)
+- [ ] 4 KPI cards (messages, conversations, appointments, contacts) from GET /v1/dashboard/overview
+- [ ] Message volume bar chart (7-day) from GET /v1/dashboard/messages (Recharts)
+- [ ] Appointment donut chart from GET /v1/dashboard/appointments
+- [ ] Quick action buttons + recent conversations list
+
+**Step 4 — Inbox Page** (app/(dashboard)/inbox/page.tsx)
+- [ ] 3-column layout: ConversationList | ChatThread | ContactSidebar
+- [ ] Conversation list with virtual scrolling (react-window), filters, unread badges
+- [ ] Chat thread with message bubbles, timestamps, delivery ticks
+- [ ] Reply box with 24h session guard, quick replies, template fallback
+- [ ] Contact sidebar (tags, appointments, notes)
+- [ ] Real-time via Socket.io (new_message, assignment_change, conversation_update)
+- [ ] Mobile: single-column with back navigation + bottom sheet for contact info
+
+**Step 5 — Contacts Pages** (app/(dashboard)/contacts/page.tsx + [id]/page.tsx)
+- [ ] Contacts table (TanStack Table v8, cursor pagination, sort, search)
+- [ ] Tag filter (multi-select), opt-out filter
+- [ ] CSV import dialog with progress bar
+- [ ] Contact detail page: 4 tabs (Overview/Timeline/Appointments/Notes)
+- [ ] Mobile: card view toggle instead of table
+
+**Step 6 — Appointments Page** (app/(dashboard)/appointments/page.tsx)
+- [ ] Calendar views: Month (overview dots) / Week (time grid) / Day (detailed slots)
+- [ ] Booking dialog: 4-step wizard (Contact → Provider+Date → Slot → Details)
+- [ ] Appointment detail panel (status actions: Complete/Cancel/No-Show/Reschedule)
+- [ ] Provider filter, status filter, date navigation
+
+**Step 7 — Campaigns Pages** (app/(dashboard)/campaigns/page.tsx + [id] + /new)
+- [ ] Campaigns list table with status badges + stats
+- [ ] Campaign create wizard (4-step: Audience → Template → Schedule → Review)
+- [ ] Campaign detail page: delivery funnel chart + per-contact log table
+- [ ] Actions: Send/Pause/Resume/Cancel (state machine guards)
+
+**Step 8 — Onboarding Wizard** (app/(onboarding)/setup/page.tsx)
+- [ ] 3-step wizard: Business Details → Connect WhatsApp → Invite Team
+- [ ] Progress bar, skip options, final submit saves all
+- [ ] Redirect logic: login → if !onboarded → /setup, else → /
+
+**Step 9 — Templates Page** (app/(dashboard)/templates/page.tsx)
+- [ ] Template card grid with status/category filters
+- [ ] Template editor: split view (form left + live WA phone preview right)
+- [ ] Variable insertion, character count, button builder
+- [ ] Save Draft + Submit for Approval actions
+
+**Step 10 — Settings Pages** (app/(dashboard)/settings/*)
+- [ ] 4 tabs: General / WhatsApp / Team / Billing
+- [ ] General: business profile + business hours (7-day) + away message
+- [ ] WhatsApp: connection status, link/unlink, credential update
+- [ ] Team: member table, invite form, role management, RBAC guards
+- [ ] Billing: plan cards, usage meters, payment history, upgrade/cancel
+
+**Step 11 — Mobile Responsive Polish**
+- [ ] Audit all pages at 375px/390px/768px/1440px
+- [ ] Inbox → single-column + bottom sheet on mobile
+- [ ] Tables → card view or horizontal scroll on mobile
+- [ ] Touch targets ≥ 44px, native date pickers, top-center toasts on mobile
+- [ ] Dark mode verification (contrast, borders, inputs)
+
+**Step 12 — Command Palette** (components/shared/command-palette.tsx)
+- [ ] Cmd+K trigger (global keyboard listener)
+- [ ] shadcn Command component in Dialog
+- [ ] Search contacts (live API), navigate pages, quick actions
+- [ ] Recent contacts from localStorage, keyboard navigation
+
+**Step 13 — Automations Page** (app/(dashboard)/automations/page.tsx)
+- [ ] Automation rules list (cards with keywords badges + actions summary)
+- [ ] Active/Inactive toggle per rule
+- [ ] Create/Edit dialog: name + keywords (multi-input) + actions (reply/tag/assign)
+- [ ] Priority ordering, delete with confirmation
 
 ---
 

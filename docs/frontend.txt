@@ -1,0 +1,1042 @@
+1.
+TASK: Build app/(auth)/login/page.tsx — Login + OTP flow.
+
+BACKEND CONTRACTS (already built, 100% working):
+POST /v1/auth/otp/send
+  Body: { "phone": "+919876543210" }  ← E.164 format required
+  Response 200: { "message": "OTP sent", "expiresIn": 300 }
+  Errors: AUTH_OTP_MAX_ATTEMPTS (429), VALIDATION_ERROR (400)
+
+POST /v1/auth/otp/verify  
+  Body: { "phone": "+919876543210", "otp": "123456" }
+  Response 200: { "accessToken": "...", "refreshToken": "...", "user": { id, name, phone, role }, "tenant": { id, name, vertical, verticalConfig, plan, onboarded: bool } }
+  Errors: AUTH_OTP_INVALID (401), AUTH_OTP_EXPIRED (401)
+
+PHONE NORMALIZATION (match backend logic exactly):
+- Strip all non-digits
+- If starts with 91 and length=12 → E.164 already
+- If 10 digits starting with 6/7/8/9 → prepend +91
+- Display format in UI: "+91 98765 43210" (with space after +91 and after 5th digit)
+
+COMPONENT: components/shared/phone-input.tsx
+- Input: non-editable "+91" prefix span + input for 10 digits
+- Auto-format display as user types: "98765 43210"
+- Normalize to E.164 before API call
+- Validate: exactly 10 digits, first digit 6-9
+- Error: red border + "Enter a valid 10-digit Indian mobile number"
+
+LOGIN PAGE LAYOUT:
+Left panel (hidden on mobile, w-[45%]):
+- bg-teal-700 background
+- Product name "WA-CRM" large white text
+- Tagline: "Grow your clinic on WhatsApp"
+- 3 feature lines with checkmarks (white)
+- Bottom: "Trusted by 500+ Indian clinics"
+
+Right panel (w-full md:w-[55%]):
+- Vertically centered card (max-w-sm mx-auto, p-8)
+- Logo mark at top (teal circle with WA icon shape)
+- "Welcome back" h1
+- "Enter your WhatsApp number" p (text-sm text-muted-foreground)
+
+PHASE 1 — Phone form:
+- PhoneInput component
+- "Send OTP" Button (full width, bg-teal-700)
+- Loading: button shows Loader2 spinner (lucide), disabled
+- After success: animate out (opacity 0, translateY -8px) → Phase 2 slides in
+
+PHASE 2 — OTP form:
+- "OTP sent to +91 98765 ✱✱✱✱✱" (mask last 5 of display)
+- 6 individual input[type="tel"] boxes, each 48x48px, border, text-center, text-lg
+  - onInput: move focus to next if digit entered
+  - onKeyDown Backspace: clear + move focus to previous
+  - onPaste: split 6 digits across boxes
+- Auto-submit when all 6 filled (call verifyOTP)
+- "Verify OTP" button (also submits, shows spinner)
+- Error: AUTH_OTP_INVALID → shake animation (CSS keyframes: translateX oscillation) + red borders + "Incorrect OTP. Try again."
+- Error: AUTH_OTP_EXPIRED → "OTP expired. " + "Resend OTP" link
+- Resend section: countdown "Resend in 0:28" → after 0s → "Resend OTP" button (calls send again)
+- Start countdown at 30s on OTP send
+
+ON SUCCESS:
+- useAuthStore.setTokens(accessToken, refreshToken)
+- useAuthStore.setUser(user, tenant)
+- If !tenant.onboarded → router.push('/setup')
+- Else → router.push('/')
+
+ANIMATIONS (Framer Motion):
+- Phase transition: AnimatePresence, each phase as motion.div with exit/enter
+- Error shake: custom CSS @keyframes shake on otp-container
+
+2.
+TASK: Build app/(dashboard)/layout.tsx with sidebar, header, and mobile nav.
+
+IMPORT FROM ZUSTAND: const { user, tenant } = useAuthStore()
+Use tenant.verticalConfig everywhere for labels. NEVER hardcode "Doctor", "Patient", "Appointment".
+
+SIDEBAR (components/layout/sidebar.tsx):
+- Width: 240px fixed, bg: #111B21, text: slate-300, height: 100vh, overflow-y: auto
+- Logo section (top, 56px height): "WA-CRM" text (white, font-semibold) + green dot (online indicator)
+- Nav items array (use Lucide icons):
+  { href: '/', label: 'Dashboard', icon: LayoutDashboard }
+  { href: '/inbox', label: 'Inbox', icon: MessageCircle, badge: true }  ← unread count
+  { href: '/contacts', label: 'Contacts', icon: Users }
+  { href: '/appointments', label: tenant.verticalConfig.bookingLabel + 's', icon: CalendarDays }
+  { href: '/campaigns', label: 'Campaigns', icon: Megaphone }
+  { href: '/templates', label: 'Templates', icon: FileText }
+  { href: '/settings', label: 'Settings', icon: Settings }
+- Active detection: usePathname(), exact match for '/', startsWith for others
+- Active style: border-l-2 border-teal-500 bg-white/5 text-white
+- Inactive: text-slate-400 hover:text-slate-200 hover:bg-white/5
+- Unread badge: small green circle with count (from useInboxStore: totalUnread)
+- Bottom section: user avatar (initials circle) + name + role + logout button (LogOut icon)
+- Collapsible: chevron button at bottom → toggles width 240px ↔ 64px (icon only), animate with CSS transition
+- Save collapsed state to localStorage
+
+HEADER (components/layout/header.tsx):
+- Height: 56px, bg: white (light) / slate-900 (dark), border-bottom, sticky top-0 z-10
+- Left: dynamic page title (from usePathname mapping)
+- Center: Search input (280px) with Search icon — click or Cmd+K opens CommandPalette (Step 12)
+- Right: 
+  - Bell icon (relative, red dot if unread notifications)
+  - Avatar button → dropdown: Profile / Settings / Logout
+
+MOBILE NAV (components/layout/mobile-nav.tsx):
+- Fixed bottom, height 56px, bg white/slate-900, border-top, z-50
+- Only visible on md:hidden
+- 5 tabs: Dashboard (Home) / Inbox / Contacts / Appointments / Settings
+- Active: text-teal-700 icon fill, inactive: text-slate-400
+- Inbox tab: show unread count badge (red pill)
+- Safe area: padding-bottom: env(safe-area-inset-bottom)
+- Hide when virtual keyboard is open: detect via window.visualViewport resize
+
+LAYOUT COMPOSITION (app/(dashboard)/layout.tsx):
+<div class="flex h-screen overflow-hidden">
+  <Sidebar /> {/* hidden on mobile */}
+  <div class="flex flex-col flex-1 overflow-hidden">
+    <Header />
+    <main class="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-900">
+      {children}
+    </main>
+  </div>
+</div>
+<MobileNav /> {/* fixed bottom, mobile only */}
+
+UNREAD COUNT: Subscribe to useInboxStore.totalUnread. This store will be populated in Step 5 (Inbox). For now, initialize to 0.
+
+3.
+TASK: Build app/(dashboard)/page.tsx — Dashboard with KPI cards + charts.
+
+REAL API CONTRACTS (backend 100% built):
+
+GET /v1/dashboard/overview
+Response: { data: {
+  date: ISO_string,
+  messages: { total: number, inbound: number, outbound: number },
+  conversations: { open: number, total: number },
+  appointments: { today: number, byStatus: { confirmed: N, completed: N, noShow: N, cancelled: N } },
+  contacts: { total: number, newToday: number }
+} }
+
+GET /v1/dashboard/messages
+Response: { data: {
+  period: "7d", startDate: ISO, endDate: ISO,
+  days: [{ date: "2025-04-24", total: N, inbound: 45, outbound: 32 }]
+} }
+
+GET /v1/dashboard/appointments  
+Response: { data: {
+  today: { confirmed: N, completed: N, noShow: N, cancelled: N },
+  past7Days: { confirmed: N, completed: N, noShow: N, cancelled: N },
+  upcoming: N
+} }
+
+GET /v1/dashboard/conversations
+Response: { data: { open: N, resolved: N, total: N, newToday: N, totalUnread: N } }
+
+NOTE: All 4 analytics endpoints have 30s Redis cache. Use TanStack Query refetchInterval: 30_000.
+
+KPI CARDS (components/dashboard/kpi-cards.tsx):
+4 cards in CSS grid (2-col mobile, 4-col desktop), gap-4:
+
+Card 1: Messages Today
+- Value: analytics.messages.today
+- Icon: MessageCircle (bg-blue-50, text-blue-600)
+- Sub: analytics.messages.inbound inbound, analytics.messages.outbound outbound
+
+Card 2: Open Conversations  
+- Value: analytics.conversations.open
+- Icon: Inbox (bg-teal-50, text-teal-600)
+- Sub: analytics.conversations.newToday new today
+
+Card 3: Today's {tenant.verticalConfig.bookingLabel}s
+- Value: analytics.appointments.today.confirmed + completed
+- Icon: CalendarDays (bg-amber-50, text-amber-600)  
+- Sub: analytics.appointments.today.completed completed, analytics.appointments.today.noShow no-show
+
+Card 4: Total Contacts
+- Value: analytics.contacts.total
+- Icon: Users (bg-purple-50, text-purple-600)
+- Sub: +analytics.contacts.newToday today
+
+SKELETON: Use shadcn Skeleton component. While loading, show gray animated rectangles matching card shape. Never show spinner.
+
+CARD DESIGN:
+- bg-white dark:bg-slate-800, rounded-xl, p-5, border border-slate-200
+- Icon: 40px circle with colored bg
+- Value: text-2xl font-semibold text-slate-900
+- Sub: text-xs text-slate-500 mt-1
+
+MESSAGE CHART (components/dashboard/message-chart.tsx):
+- Recharts BarChart, height 240px
+- X-axis: format date "Apr 24" (date-fns format(date, 'MMM d'))
+- Y-axis: auto, no decimals
+- Two bars per day: Inbound (teal #0D9488) + Outbound (blue #1E40AF)
+- Tooltip: custom, shows date + both values
+- Legend: top-right of card
+
+APPOINTMENT CHART (components/dashboard/appointment-chart.tsx):
+- Recharts PieChart (donut, innerRadius 60, outerRadius 90), height 200px
+- Slices: Confirmed (#0D9488) / Completed (#15803D) / No-show (#B91C1C) / Cancelled (#94A3B8)
+- Center label: total count
+- Legend: list below chart with colored dots
+
+QUICK ACTIONS (row of 3 buttons below KPIs):
+- "New Contact" → router.push('/contacts?action=new')
+- "Send Broadcast" → router.push('/campaigns?action=new')  
+- "Book {verticalConfig.bookingLabel}" → router.push('/appointments?action=new')
+
+RECENT CONVERSATIONS (bottom of page):
+- GET /v1/conversations?limit=5
+- List: Avatar (initials) + name + last message preview (truncated 50 chars) + time (formatRelativeTime from lib/utils.ts) + unread badge
+- "View all" link → /inbox
+
+DATES: All times from API are UTC ISO strings. Convert to IST using:
+import { formatInTimeZone } from 'date-fns-tz'
+const IST = 'Asia/Kolkata'
+formatInTimeZone(new Date(isoString), IST, 'dd MMM yyyy, hh:mm a')
+
+
+4.
+TASK: Build app/(dashboard)/inbox/page.tsx — the core of the product.
+
+BACKEND API CONTRACTS:
+
+GET /v1/conversations?status=open&assignedTo=me&cursor=xxx&limit=20
+Response: { data: [{ id, contact: { id, name, phone, avatar }, lastMessage: { content, type, createdAt, direction }, unreadCount, status, assignedTo: { id, name } | null, waSession: { active: bool, expiresAt: ISO } }], nextCursor: string|null }
+
+GET /v1/conversations/:id/messages?cursor=xxx&limit=30
+Response: { data: [{ id, content, type, direction, status, createdAt, isNote: bool }], nextCursor: string|null }
+NOTE: direction = 'inbound' | 'outbound', status = 'sent'|'delivered'|'read'|'failed'
+
+POST /v1/messages/send
+Body: { conversationId, content: string }
+Guard: returns MESSAGE_SESSION_EXPIRED if WA session > 24h. Frontend must check waSession.active first.
+
+POST /v1/messages/send-template
+Body: { conversationId, templateId, variables: string[] }
+
+PATCH /v1/conversations/:id/assign
+Body: { userId: string | null }
+
+PATCH /v1/conversations/:id/status  
+Body: { status: 'open' | 'resolved' }
+
+POST /v1/conversations/:id/notes
+Body: { content: string }
+
+SOCKET.IO EVENTS (from backend socket.ts):
+new_message: { conversationId, message: MessageObj, contact }
+message_status: { messageId, status: 'delivered'|'read' }
+assignment_change: { conversationId, assignedTo }
+conversation_update: { conversationId, ...fields }
+typing_start: { conversationId }
+typing_stop: { conversationId }
+
+ZUSTAND STORE (useInboxStore):
+- conversations: Map<id, Conversation>
+- activeConversationId: string | null
+- totalUnread: number (drives sidebar badge)
+- filters: { status, assignedTo, search }
+- On new_message socket event: update conversation lastMessage + unreadCount + move to top
+
+LAYOUT (desktop):
+<div class="flex h-full overflow-hidden">
+  <ConversationList class="w-80 flex-none border-r" />
+  <ChatThread class="flex-1 flex flex-col" />
+  <ContactSidebar class="w-[300px] flex-none border-l" />
+</div>
+
+CONVERSATION LIST (components/inbox/conversation-list.tsx):
+- Sticky top: search input (debounced 300ms → filter locally from store)
+- Filter chips: All | Mine | Unassigned | Open | Resolved (toggleable, sends to API)
+- react-window FixedSizeList, itemSize=72, overscanCount=5
+- Each row: Avatar (initials, colored by hash of name) + name + preview (truncated 40 chars) + relative time + unread badge (if >0)
+- Active: bg-teal-50 border-l-2 border-teal-600
+- Hover: bg-slate-50
+- At bottom of list: load more (cursor pagination) when scrolled near end
+
+CHAT THREAD (components/inbox/chat-thread.tsx):
+Header (56px): back button (mobile only) + contact avatar + name + WA number + online dot + action icons
+- Assign dropdown (PATCH assign)
+- Mark resolved button (PATCH status)
+- Notes toggle
+
+Messages area (flex-1, overflow-y-auto, ref for scroll-to-bottom):
+- Group messages by date → insert DateSeparator ("Today", "Yesterday", "12 Apr 2025")
+- MessageBubble (components/inbox/message-bubble.tsx):
+  - inbound (direction=inbound): left, bg-white, rounded-tl-none, shadow-sm
+  - outbound: right, bg-[#DCF8C6] dark:bg-teal-800, rounded-tr-none
+  - isNote=true: center, italic, bg-amber-50, text-amber-800 ("Internal note")
+  - Timestamp: text-[10px] text-slate-400 below bubble
+  - Status ticks (outbound only): single tick (sent) / double gray (delivered) / double teal (read) / red x (failed)
+  - Image messages: <img> 200px wide, rounded, click to fullscreen
+- Typing indicator: left side, animated 3 dots (span with CSS animation, scale bounce 0.4s each, staggered)
+- On new_message: scroll to bottom (smooth)
+
+REPLY BOX (components/inbox/reply-box.tsx):
+- Session warning banner (ABOVE input): if !waSession.active → amber bar "WhatsApp session expired — use a template" + "Send Template" button. If active but <1hr → "Session expires in Xm"
+- Emoji picker: EmojiPicker npm or simple grid. Toggles above input.
+- Attach button: file input (accept image/*, .pdf), uploads to POST /v1/media/upload (show progress)
+- Template button: opens TemplateSelector modal (list of approved templates)
+- Textarea: auto-expand 1-4 rows, Enter to send (Shift+Enter for newline), placeholder "Type a message..."
+- Send button: teal, disabled when empty or no session
+
+CONTACT SIDEBAR (components/inbox/contact-sidebar.tsx):
+- Toggle button: ChevronRight/Left icon, animates panel width 300 ↔ 0px
+- Sections (Accordion, shadcn):
+  - Contact Info: name, phone, city, tags (colored chips)
+  - Session: "Session active, expires in 3h 14m" or "Expired"
+  - Notes: last 3 notes + "Add note" textarea
+  - Appointments: next upcoming + "Book" button (→ appointments page with contact prefilled)
+
+MOBILE: 
+- md:hidden: show only ConversationList full screen
+- On tap: push conversation → show ChatThread full screen (back button to list)
+- ContactSidebar: bottom sheet (fixed bottom, height 60vh, drag handle, backdrop)
+
+HOOKS:
+- useConversations(): TanStack Query, infinite scroll, refetch on socket event
+- useMessages(conversationId): TanStack Query infinite scroll, prepend on new socket message
+- useSocket(): subscribes to events, updates Zustand store
+
+5.
+TASK: Build contacts pages — app/(dashboard)/contacts/page.tsx and contacts/[id]/page.tsx.
+
+BACKEND API CONTRACTS:
+
+GET /v1/contacts?search=priya&tags=vip,new&cursor=xxx&limit=25&sortBy=name&order=asc
+Response: { data: [{ id, name, phone, tags, lastContactedAt, createdAt, optOut, assignedTo }], nextCursor: string|null, total: number }
+
+POST /v1/contacts
+Body: { name, phone (E.164), tags?: string[], city?: string }
+Error: CONTACT_DUPLICATE (409), CONTACT_INVALID_PHONE (400)
+
+PATCH /v1/contacts/:id
+Body: partial contact fields
+Response: updated contact
+
+DELETE /v1/contacts/:id (soft delete — sets deletedAt)
+
+POST /v1/contacts/import
+Body: FormData with "file" CSV field
+Response: { jobId: string }
+Then poll: GET /v1/contacts/import/:jobId → { status: 'pending'|'processing'|'done'|'failed', progress: { total, processed, created, duplicates, invalid } }
+
+GET /v1/contacts/:id
+Response: full contact with assignedTo, tags, customFields, optOut, createdAt
+
+GET /v1/contacts/:id/timeline?cursor=xxx&limit=20
+Response: { data: [{ type: 'message'|'appointment'|'note', createdAt, content: any }] }
+
+CONTACTS LIST PAGE:
+
+FILTER BAR (sticky top, below page header):
+- Search input: debounced 300ms, clears cursor on change
+- Tag filter: Popover with checkboxes for tags, shows selected as chips
+- Add Contact button: opens AddContactDialog (shadcn Dialog, PhoneInput + name + tags)
+- Import CSV button: opens ImportDialog
+
+TABLE (TanStack Table v8):
+Columns: [select checkbox] | Name+Avatar | Phone | Tags | Last Contact | Status | Actions
+- Avatar: 32px circle, 2-char initials, bg color from hash(name)
+- Phone: format with formatIndianPhone(), click-to-copy (show "Copied!" Tooltip 1s)
+- Tags: show up to 2 chips (teal outline), "+N" badge if more
+- Last Contact: relative time from formatRelativeTime()
+- Status: "Active" green badge / "Opted out" red badge
+- Actions column (visible on row hover): MessageCircle (→ open inbox with this contact) + Pencil (inline edit) + Trash (confirm dialog)
+- Click name/row → navigate /contacts/[id]
+- Sort: click column header → toggle asc/desc, show sort icon
+
+BULK ACTIONS (appears above table when rows selected):
+"{N} selected" + [Add Tag] [Remove Tag] [Export CSV] [Delete]
+- Delete: confirm dialog listing count + consequences
+
+PAGINATION: "Load more" button below table, disabled when nextCursor=null, shows loading spinner
+
+EMPTY STATE (components/shared/empty-state.tsx):
+- SVG illustration (simple outline of people)
+- "No contacts yet"
+- "Import from CSV" primary button + "Add manually" secondary
+
+IMPORT DIALOG (components/contacts/import-dialog.tsx):
+Step 1: Drag-drop zone (dashed border, accept .csv only) → shows filename + row count estimate
+Step 2: After upload → poll /v1/contacts/import/:jobId every 2s
+Progress bar: processed/total with percentage
+Stats below: "Created: X | Duplicates: X | Invalid: X"
+Step 3: Done → "Import complete. X contacts added." + Close button
+
+CONTACT DETAIL PAGE (/contacts/[id]):
+
+HEADER: 
+- Back breadcrumb: "← Contacts"
+- 64px avatar circle (initials, colored)
+- Name (h1, 24px) + phone (formatted, copyable) + city
+- OptOut: red "Do Not Contact" badge if optOut=true (prevent messaging)
+- Action buttons: "Open Chat" (→ /inbox?contactId=id) | "Book {verticalConfig.bookingLabel}" | "Add Note"
+
+4 TABS (shadcn Tabs, sticky below header):
+Overview | Timeline | Appointments | Notes
+
+OVERVIEW TAB: 2-col grid of labeled fields
+All fields editable inline: click value → input appears → Enter/Escape → PATCH /v1/contacts/:id
+Fields: Full name / Phone / Email / City / State / Tags (chip editor) / Assigned to (user dropdown) / Notes (textarea)
+Show "Unsaved changes" banner with Save/Discard when dirty
+
+TIMELINE TAB:
+Vertical timeline (left border line, circles at each event)
+GET /v1/contacts/:id/timeline (infinite scroll, 20 per page)
+Event types:
+- message: MessageCircle icon (blue=inbound, teal=outbound) + preview + time
+- appointment: CalendarDays icon (amber) + provider + time + status badge
+- note: StickyNote icon (gray) + content + author name + time
+- contact_created: UserPlus icon (purple) + "Contact added" + time
+Infinite scroll: IntersectionObserver on last item → load next page
+
+APPOINTMENTS TAB: list of appointments for this contact (GET /v1/appointments?contactId=id)
+NOTES TAB: reverse-chron notes, add note form at top
+
+
+6.
+TASK: Build app/(dashboard)/appointments/page.tsx — calendar + booking system.
+
+BACKEND API CONTRACTS:
+
+GET /v1/providers (list all providers for this tenant)
+Response: { data: [{ id, name, specialization, slotDuration, isActive }] }
+Use tenant.verticalConfig.providerLabel for display ("Doctor", "Stylist", etc.)
+
+GET /v1/appointments/slots?providerId=xxx&date=2025-04-30
+Response: { slots: [{ startTime: "09:00", endTime: "09:30", available: bool, onLeave: bool }] }
+NOTE: date in YYYY-MM-DD format (IST date, not UTC)
+
+GET /v1/appointments?date=2025-04-30&providerId=xxx&status=confirmed&cursor=xxx
+Response: { data: [{ id, contact: { name, phone }, provider: { name }, startTime, endTime, status, purpose, notes }] }
+All times are UTC ISO strings → display in IST
+
+POST /v1/appointments
+Body: { contactId, providerId, startTime: ISO_UTC, endTime: ISO_UTC, purpose?: string, notes?: string }
+Error: APPOINTMENT_SLOT_UNAVAILABLE (409), APPOINTMENT_DOUBLE_BOOKING (409)
+NOTE: Backend auto-sends WA confirmation template — frontend shows "Appointment booked! Confirmation sent via WhatsApp."
+
+PATCH /v1/appointments/:id/complete → marks confirmed → completed
+PATCH /v1/appointments/:id/cancel → marks → cancelled, returns slot
+PATCH /v1/appointments/:id/reschedule
+Body: { newStartTime: ISO_UTC, newProviderId?: string }
+NOTE: Backend does atomic cancel + rebook in Prisma transaction
+
+STATUS COLORS:
+confirmed: bg-blue-100 text-blue-800 border-blue-200
+completed: bg-green-100 text-green-800 border-green-200
+no_show: bg-red-100 text-red-800 border-red-200
+cancelled: bg-slate-100 text-slate-500 border-slate-200
+
+PAGE LAYOUT:
+Header: "{verticalConfig.bookingLabel}s" title + Today button + Month navigator + [Month|Week|Day] toggle + "Book {verticalConfig.bookingLabel}" CTA button
+
+CALENDAR VIEW (components/appointments/calendar-view.tsx):
+MONTH VIEW:
+- 7-column grid with day headers (Sun-Sat)
+- Each day cell: date number + up to 3 appointment pills (truncated name) + "+N more" if overflow
+- Click cell → opens DayPopover or switches to Day view
+
+WEEK VIEW (default on desktop):
+- Left: time column (08:00 AM to 08:00 PM, 1hr rows, 60px height each)
+- 7 day columns, each day has appointment blocks
+- Appointment block: colored pill (by status), positioned absolutely by start/end time
+  height = duration/60 * 60px, top = (minutesSinceMidnight - 480) / 60 * 60px
+- Current time: red horizontal line (updates every minute, visible=today only)
+- Click appointment → DetailPanel slides in from right
+
+DAY VIEW:
+- Single day time grid
+- More space per appointment, shows contact name + phone + purpose
+
+TODAY HIGHLIGHT: current date cell/column has subtle teal bg tint
+
+BOOKING DIALOG (components/appointments/booking-dialog.tsx):
+Triggered by FAB button, "Book" on calendar, or "Book Appointment" from contact detail.
+
+Step 1 — Select Contact:
+- Combobox (Popover + Command from shadcn): search contacts by name/phone
+- GET /v1/contacts?search=xxx&limit=10 (debounced)
+- Shows: Avatar + name + phone
+- If opened from contact detail → pre-select that contact
+
+Step 2 — Select Provider + Date:
+- Provider: Select dropdown (from GET /v1/providers), shows name + specialization
+- Date: Calendar widget (shadcn Calendar), min = today, highlight dates with availability
+
+Step 3 — Select Time Slot:
+(components/appointments/slot-picker.tsx)
+- Call GET /v1/appointments/slots?providerId=xxx&date=YYYY-MM-DD
+- Show slots as button grid (2-col): "09:00 AM – 09:30 AM"
+- available=false: gray, disabled, line-through
+- onLeave=true: show tooltip "Provider on leave"
+- Selected: teal filled button
+- Convert display times: slot.startTime "09:00" + date → IST display, then to UTC ISO for API
+
+Step 4 — Details:
+- Purpose: text input with suggestions (shadcn Command menu with: "Follow-up", "Consultation", "Check-up", "Procedure", custom)
+- Notes: optional textarea
+- "Send WA confirmation" toggle — read-only, always ON (backend handles it automatically)
+
+Footer: Cancel + "Book {verticalConfig.bookingLabel}" button
+On success: toast "Booked! WA confirmation sent." + invalidate appointments query
+
+DETAIL PANEL (slide-in from right, 320px):
+Shows: contact name + phone | provider | date + time (IST) | status badge | purpose | notes
+Actions: [Complete] [Reschedule] [Cancel]
+Reschedule: opens slot picker with new date/provider pre-filled
+
+
+
+7.
+TASK: Build campaigns pages — app/(dashboard)/campaigns/page.tsx and campaigns/[id]/page.tsx.
+
+BACKEND API CONTRACTS:
+
+GET /v1/campaigns?status=draft&cursor=xxx
+Response: { data: [{ id, name, status, template: { name }, sentCount, deliveredCount, readCount, replyCount, scheduledAt, createdAt }] }
+Status: draft | scheduled | sending | paused | completed | cancelled | failed
+
+POST /v1/campaigns
+Body: { name, templateId, segment: { tags?: string[], matchAll?: bool }, scheduledAt?: ISO_UTC }
+Response: { id, status: 'draft', estimatedReach: number }
+
+PATCH /v1/campaigns/:id (draft or scheduled only)
+Body: partial campaign fields
+
+POST /v1/campaigns/:id/send
+Guard (backend): template must be approved, contacts > 0, not already sending
+Errors: CAMPAIGN_NO_CONTACTS (422), CAMPAIGN_TEMPLATE_REJECTED (422)
+On success: status changes to 'sending', BullMQ job queued
+
+POST /v1/campaigns/:id/pause → status: sending → paused
+POST /v1/campaigns/:id/resume → status: paused → sending
+POST /v1/campaigns/:id/cancel → status: cancelled (cleans Redis job)
+
+GET /v1/campaigns/:id/stats
+Response: { sentCount, deliveredCount, readCount, replyCount, deliveryRate, readRate, pendingCount }
+
+GET /v1/templates?status=approved&limit=50
+Response: { data: [{ id, name, category, body, variables, status, header, footer, buttons }] }
+
+STATUS BADGE STYLES + ANIMATIONS:
+draft: gray pill
+scheduled: amber pill + Clock icon
+sending: blue pill + pulsing dot (CSS: animate-pulse on a 6px circle)
+paused: orange pill + PauseCircle icon
+completed: green pill + CheckCircle icon
+failed: red pill + XCircle icon
+cancelled: slate pill, line-through text
+
+CAMPAIGNS LIST PAGE:
+Header: "Campaigns" + "New Campaign" primary CTA
+
+STATS ROW (4 metric cards, fetched from all campaigns aggregate — calculate from list):
+This Month: Messages Sent / Delivered % / Read % / Replied %
+
+CAMPAIGNS TABLE:
+Name | Status | Audience | Delivered % | Read % | Replied % | Sent/Scheduled | Actions
+- Delivering %: show progress bar inside cell (thin, teal fill)
+- Actions: View Stats / Edit (draft only) / Pause|Resume / Cancel / Delete (draft only)
+- Row click → /campaigns/[id]
+
+CAMPAIGN CREATE (4-step wizard, full-page or large modal — use full page at /campaigns/new):
+
+STEP 1 — AUDIENCE:
+- Campaign name input (required)
+- Segment builder: "Contacts with tags:" → multi-select tag input
+- Match ALL / ANY radio
+- Live reach count: debounced call to GET /v1/contacts?tags=xxx (count result)
+- Shows: "Estimated reach: 1,247 contacts" (or 0 = error state, block next step)
+
+STEP 2 — TEMPLATE:
+- Grid of approved template cards (3-col desktop, 1-col mobile)
+- Card: name + category badge (Marketing=purple, Utility=blue, Authentication=amber) + body preview (80 chars)
+- Selected: teal border (2px) + checkmark overlay
+- Click → right panel: full template preview in WA phone frame mockup
+- Variables {1}, {2} shown as highlighted [placeholder] in preview
+
+STEP 3 — SCHEDULE:
+Two radio card options:
+- "Send immediately" → no scheduledAt in API body
+- "Schedule for later" → show date input (min=today) + time select (15min slots, IST)
+  Convert selected IST time to UTC ISO for API
+
+STEP 4 — REVIEW:
+Summary card: audience count + template name + schedule
+"Launch Campaign" button (full width, teal, large)
+Pre-flight: if estimatedReach=0 → block with error
+After launch: toast "Campaign launched!" + redirect /campaigns/[id]
+
+CAMPAIGN DETAIL (/campaigns/[id]):
+Header: campaign name + status badge + action buttons (Pause|Resume|Cancel depending on status)
+
+METRICS (post-send only):
+Recharts FunnelChart or custom vertical bars: Sent → Delivered → Read → Replied
+Each bar: count + percentage label
+Or use 4 metric cards with large numbers + labeled
+
+Below: paginated table of campaign_logs
+Columns: Contact name | Phone | Delivered | Read | Replied | Sent at
+(backend: GET /v1/campaigns/:id/logs?cursor=xxx — implement if not already done, or skip table
+
+
+
+8.
+TASK: Build app/(onboarding)/setup/page.tsx — 3-step onboarding wizard.
+
+TRIGGERED WHEN: User logs in and tenant.onboarded === false → redirect to /setup.
+After completing → PATCH /v1/settings/business with onboarded:true → redirect to /.
+
+LAYOUT: Full-page centered, max-w-2xl. Progress bar at top (3 segments, filled teal as steps complete).
+
+STEP 1 — Business Details:
+- Business name (required, prefilled from signup if available)
+- Vertical select: dropdown with options from VERTICAL_PRESETS (clinic, salon, gym, education, restaurant, generic)
+- City + State inputs
+- Timezone: default "Asia/Kolkata" (read-only for MVP, all India)
+- "Next" button → saves to Zustand temporarily (all saved together at end)
+
+STEP 2 — Connect WhatsApp:
+- WhatsApp Phone Number ID (text input)
+- Permanent Access Token (password input with show/hide toggle)
+- "How to find these" expandable accordion with brief Meta Business Suite instructions
+- "Skip for now" link (can connect later from Settings)
+- "Next" button → PUT /v1/settings/whatsapp { phoneNumberId, accessToken }
+  On error: show inline "Invalid credentials" message, allow retry
+
+STEP 3 — Invite Team (optional):
+- "Invite a team member" section
+- Phone input + role select (admin / manager / staff)
+- "Send Invite" button → POST /v1/team/invite
+- Or "Skip — I'll do this later" prominent link
+- Shows success state: "Invited!" + invited user phone
+
+FINAL:
+- "Complete Setup" button → PATCH /v1/settings/business { ...step1Data }
+- Sets tenant.onboarded = true
+- Redirect to / (dashboard)
+- Confetti animation or simple toast "Welcome aboard!"
+
+NAVIGATION: Back/Next buttons. Steps store in local useState (not persisted to API until final submit).
+
+
+9.
+TASK: Build app/(dashboard)/templates/page.tsx — WhatsApp template management.
+
+BACKEND API CONTRACTS:
+
+GET /v1/templates?status=approved&category=MARKETING&search=reminder
+Response: { data: [{ id, name, category, status, body, variables, header, footer, buttons, rejectionReason, createdAt }] }
+Status: draft | pending | approved | rejected
+Category: MARKETING | UTILITY | AUTHENTICATION
+
+POST /v1/templates
+Body: { name (snake_case, validate), category, body (max 1024), variables?: string[], header?: { type: 'TEXT'|'IMAGE', value: string }, footer?: string, buttons?: [{ type: 'QUICK_REPLY'|'URL', text, url? }] }
+
+PATCH /v1/templates/:id (draft/rejected only, cannot edit approved/pending)
+DELETE /v1/templates/:id
+Error: cannot delete template used in active/sending campaign
+
+POST /v1/templates/:id/approve (dev mode only — simulates Meta approval)
+POST /v1/templates/:id/reject (dev mode only)
+
+NAME VALIDATION: lowercase letters, numbers, underscores only. Pattern: /^[a-z0-9_]+$/
+Example: "appointment_reminder_v2"
+
+TEMPLATE LIST PAGE:
+
+FILTER ROW:
+- Search input (debounced)
+- Category filter: All / Marketing / Utility / Authentication
+- Status filter: All / Approved / Pending / Rejected / Draft
+
+CARD GRID (3-col CSS grid, gap-4):
+Each card (bg-white, border, rounded-xl, p-4, hover:shadow-sm):
+- Header: template name (font-medium, truncated) + category badge + status badge
+- Body preview: first 80 chars of body text (text-sm text-slate-600, italic)
+- Footer: "Updated X days ago"
+- On hover: show action row:
+  - Approved: [Use in Campaign] [View]
+  - Draft/Rejected: [Edit] [Delete]
+  - Pending: [View] only
+- Rejected: rejection reason as Tooltip on hover of status badge
+
+TEMPLATE EDITOR (full-screen dialog or dedicated modal, max-w-4xl):
+Split layout: Left (edit form) | Right (live preview, 40% width)
+
+LEFT SIDE:
+Template name: input, validate pattern on blur, show example "e.g. appointment_reminder"
+Category: Select (MARKETING / UTILITY / AUTHENTICATION)
+
+Body textarea (main field, rows=6):
+- Format toolbar above: Bold (*text*) / Italic (_text_) / Strikethrough (~text~) — wrap selected text
+- "Add variable" button: inserts {N} at cursor where N = next variable index
+- Character count: "423 / 1024"
+- Below textarea: variable list "Variables: {1} = ?, {2} = ?" — allow user to name each
+
+Header (optional, toggle):
+- Type: None / Text / Image (radio)
+- Text: input (max 60 chars, no variables allowed)
+- Image: file upload dropzone
+
+Footer (optional): input (max 60 chars, no variables, no formatting)
+
+Buttons (up to 3, optional):
+Each button row: Type select (Quick Reply / Call to Action) + Text input + URL input (if CTA)
+"+ Add button" link (disabled at 3)
+
+RIGHT SIDE (live preview):
+Phone frame mockup (SVG or div: dark header with "Business Name" + status bar aesthetic)
+Message bubble (white, rounded, shadow-sm, max-w-[260px]):
+- Header: bold or image placeholder
+- Body: render {1}, {2} as [highlighted spans with var name]
+- Footer: italic, text-slate-500
+- Buttons: teal outlined buttons below bubble
+
+FOOTER ACTIONS:
+"Save Draft" (outlined) + "Submit for Approval" (teal, primary)
+On Submit: status → pending, show "Submitted! Meta review takes 24–48 hours."
+
+
+
+10.
+TASK: Build settings pages — all 4 tabs.
+
+BOOTSTRAP: Use GET /v1/settings/all (single aggregate endpoint) to load all settings at once on page mount. This reduces 4 API calls to 1.
+Response: { business: {...}, hours: {...}, awayMessage: {...}, whatsapp: { linked: bool, phoneNumber: string|null, maskedToken: string|null } }
+
+SETTINGS LAYOUT:
+- Horizontal tab bar (sticky, border-bottom): General | WhatsApp | Team | Billing
+- Tab routing: /settings (general), /settings/whatsapp, /settings/team, /settings/billing
+- Or use shadcn Tabs component (client-side tab switch, no routing needed for simplicity)
+
+== GENERAL TAB ==
+Uses PATCH /v1/settings/business + PATCH /v1/settings/hours + PATCH /v1/settings/away-message
+
+Business Profile section:
+- Logo: circular upload zone (120px) — click to open file picker, preview immediately, uploads on save
+- Business name (required)
+- Business category (from tenant.vertical, read-only display)
+- Email, address, city, state, pincode, website (optional fields)
+
+Business Hours section (7 day rows):
+Each row: Day label + Toggle (open/closed) + if open: time-from select + time-to select (30min increments 6:00 AM – 11:00 PM)
+- Backend validation: open time < close time (VALIDATION_ERROR if not)
+- "Apply to all weekdays" shortcut button
+
+Away Message section:
+- Enable away message: Toggle
+- Message text: textarea (max 1024 chars, shown when session expired/outside hours)
+- "Send only outside working hours": Checkbox (outsideHoursOnly field)
+
+SAVE BEHAVIOR: Track form dirty state with React Hook Form. "Save Changes" button (bottom, sticky) appears only when dirty. On success: toast "Settings saved."
+
+== WHATSAPP TAB ==
+Uses GET /v1/settings/all (whatsapp part) + PUT /v1/settings/whatsapp + DELETE /v1/settings/whatsapp
+
+Connected state (if whatsapp.linked=true):
+- Green "Connected" badge + WhatsApp icon
+- Phone number: "+91 98765 43210"
+- Access token: masked display "sk-...•••••••••••••••" (never show full token — backend stores encrypted)
+- "Update credentials" expandable section → same form as unlinked state
+- "Disconnect WhatsApp" red outlined button → confirmation dialog ("This will stop all messaging")
+
+Unlinked state:
+- Warning: "Connect WhatsApp Business to start messaging"
+- Form: WhatsApp Phone Number ID (text input) + Permanent Access Token (password input, toggle show/hide)
+- "How to find these" accordion with step-by-step (Meta Business Suite → WhatsApp → API Setup)
+- "Connect" button → PUT /v1/settings/whatsapp { phoneNumberId, accessToken }
+
+== TEAM TAB ==
+Uses GET /v1/team + POST /v1/team/invite + PATCH /v1/team/:id/role + DELETE /v1/team/:id
+
+RBAC: Only 'owner' can delete members or change roles. Admin can invite. Staff cannot access this tab (redirect with error toast).
+
+Invite form (top, card):
+- Email input + Role select (admin / manager / staff) + "Send Invite" button
+- On success: toast "Invite sent to {email}" + row added with "Pending" badge
+
+Team table:
+Avatar+Name | Phone | Role | Status | Joined | Actions
+- Role dropdown: inline select (save on change) — disabled for 'owner' row + own row
+- Status: "Active" (green) / "Pending" (amber, invite not accepted)
+- Actions: Deactivate (with confirm dialog) — hidden for own row and owner row
+- Deactivate confirm: "This will revoke {name}'s access. Ongoing conversations stay assigned."
+
+== BILLING TAB ==
+RBAC: Only owner+admin (BILLING_VIEW permission). Others see "No access" empty state.
+
+GET /v1/billing/plans → 4 plan cards
+GET /v1/billing/subscription → current plan details  
+GET /v1/billing/payments?limit=10 → payment history
+
+PLAN CARDS (2x2 grid):
+Plans: Trial (Free, 14d) | Starter ₹999/mo | Growth ₹2,499/mo | Pro ₹4,999/mo
+Each card: plan name + price + feature list (contacts limit / messages / team members)
+Current plan: teal border + "Current Plan" badge
+Other plans: "Upgrade" button (POST /v1/billing/upgrade { planId }) → redirects to Razorpay checkout URL
+Trial card: "Start Free Trial" (POST /v1/billing/subscribe { planId: 'trial' })
+
+USAGE BARS (3 bars):
+- Conversations this month: {used} / {limit} (progress bar, teal fill, amber when >80%, red when >95%)
+- Total contacts: {used} / {limit}
+- Team members: {used} / {limit}
+If near limit: show amber warning card with "Upgrade to get more" CTA
+
+PAYMENT HISTORY table (below plans):
+Date | Plan | Amount (₹) | Status (Paid=green/Failed=red) | Invoice (Download PDF link)
+
+"Cancel subscription" link: muted text, opens confirm dialog with consequences + "Keep my plan" primary button (dark pattern OK here — cancellation is serious)
+
+
+11.
+TASK: Mobile responsive audit and polish pass — all pages in apps/web.
+
+This is a dedicated polish sprint, not new features. Go page by page.
+
+BREAKPOINTS IN USE:
+- Mobile: < 768px (md breakpoint)
+- Tablet: 768–1024px
+- Desktop: > 1024px
+
+AUDIT CHECKLIST — for each page below, verify and fix:
+
+1. LOGIN PAGE:
+- Mobile: hide left panel (hidden md:flex), right panel takes full screen
+- OTP boxes: ensure 48px height on mobile, fit all 6 in one row on 375px
+- No horizontal overflow
+
+2. DASHBOARD:
+- KPI cards: grid-cols-2 (mobile) → grid-cols-4 (desktop)
+- Charts: full-width stacked (flex-col)
+- Quick actions: horizontal scroll row (overflow-x-auto, no wrap)
+- Recent conversations: full width
+
+3. INBOX:
+- Mobile = single column navigation:
+  State 1: ConversationList (full screen)
+  State 2: ChatThread (full screen, ← back button top-left → State 1)
+  State 3: ContactSidebar as BottomSheet
+- BottomSheet component: position bottom-0, height 60vh, rounded-t-2xl, drag handle at top (32px bar centered)
+  - Entry: animate translateY from 100% → 0 (Framer Motion)
+  - Backdrop: tap to close
+- Reply box: ensure input is scrolled into view when keyboard opens on iOS
+  Use: window.visualViewport?.addEventListener('resize', ...) to detect keyboard
+
+4. CONTACTS:
+- Table: horizontal scroll (overflow-x-auto on wrapper) OR
+- Card view toggle (CardView component): each contact as 72px card with avatar + name + phone + tag + action button
+- Default to card view on mobile
+
+5. APPOINTMENTS:
+- Week view → Day view on mobile (too narrow for 7 columns)
+- Booking dialog → full-screen bottom sheet on mobile
+- Slot picker: 3-col button grid → 2-col on mobile
+
+6. CAMPAIGNS, TEMPLATES, SETTINGS:
+- Tabs: horizontal scroll (overflow-x-auto, no wrap) if tabs don't fit
+- Forms: full-width inputs
+- Tables: horizontal scroll or simplified view
+
+7. GLOBAL FIXES:
+- All <Button> and interactive elements: min-h-[44px] min-w-[44px] (WCAG touch target)
+- Select dropdowns: use native <select> on mobile (better UX on iOS/Android)
+- Date pickers: use input[type="date"] on mobile (native date picker)
+- Toasts: top-center on mobile (not bottom-right)
+
+8. BOTTOM NAV (already built in Step 3, verify):
+- Fixed to bottom, z-50
+- Hides when keyboard open:
+  const [navHidden, setNavHidden] = useState(false)
+  useEffect(() => {
+    const vv = window.visualViewport
+    const handler = () => setNavHidden((vv.height < window.innerHeight * 0.75))
+    vv?.addEventListener('resize', handler)
+    return () => vv?.removeEventListener('resize', handler)
+  }, [])
+  Apply: className={cn("...", navHidden && "hidden")}
+- Safe area: style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+
+9. DARK MODE VERIFICATION:
+- Every page in dark mode: check text contrast, card borders visible, inputs readable
+- Common issues: hardcoded bg-white → add dark:bg-slate-800, text-slate-900 → dark:text-slate-100
+
+10. FINAL CHECK: Run in Chrome DevTools → responsive mode at:
+- 375px (iPhone SE) — most constrained
+- 390px (iPhone 14)
+- 768px (iPad)
+- 1440px (desktop)
+Log any overflow, invisible text, or touch targets < 44px.
+
+
+12.
+TASK: Build components/shared/command-palette.tsx — global Cmd+K command palette.
+
+Mount this in app/(dashboard)/layout.tsx so it's available on all dashboard pages.
+Trigger from Header search bar click OR keyboard.
+
+KEYBOARD TRIGGER:
+useEffect(() => {
+  const handler = (e: KeyboardEvent) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      e.preventDefault()
+      setOpen(true)
+    }
+  }
+  document.addEventListener('keydown', handler)
+  return () => document.removeEventListener('keydown', handler)
+}, [])
+
+USE SHADCN COMMAND COMPONENT:
+shadcn/ui has <Command>, <CommandInput>, <CommandList>, <CommandGroup>, <CommandItem> — use these as the base.
+Add a <Dialog> wrapper for the overlay.
+
+OVERLAY (shadcn Dialog, no close X button):
+- DialogContent: max-w-[560px], p-0, overflow-hidden, rounded-xl
+- Backdrop: standard Dialog backdrop (rgba(0,0,0,0.4))
+- Esc closes (Dialog default behavior)
+
+COMMAND INPUT:
+- Autofocus on open (autoFocus prop)
+- Placeholder: "Search contacts, navigate, or take action..."
+- Magnifying glass icon (left, text-slate-400)
+
+RESULT GROUPS (shown based on input):
+
+When EMPTY input (no search):
+Group "Recent": last 3 contacts opened (store in localStorage: recentContactIds[])
+Group "Quick actions":
+- New contact → router.push('/contacts?action=new')
+- New campaign → router.push('/campaigns/new')
+- Book appointment → router.push('/appointments?action=new')
+- Invite team member → router.push('/settings/team')
+Group "Pages": Dashboard / Inbox / Contacts / Appointments / Campaigns / Templates / Settings
+
+When TYPING (input.length >= 1):
+Group "Contacts" (live search):
+- GET /v1/contacts?search={input}&limit=8 (debounced 200ms)
+- Each item: Avatar (initials circle) + name + phone (formatted)
+- On select: router.push('/contacts/' + id), close palette, add to recentContactIds
+- Highlight matching chars in name: wrap matching substring in <mark className="bg-teal-100 text-teal-800 rounded">
+
+Group "Pages" (filter by input):
+- Filter page list by input match (startsWith or includes on label)
+- Show matching pages
+
+Group "Actions":
+- Filter action list by input
+
+KEYBOARD NAVIGATION:
+shadcn Command handles this automatically (arrow keys, Enter, mouse hover).
+First item auto-selected when results appear.
+
+ANIMATION (shadcn Dialog uses Radix Portal + Framer-style):
+Add className to DialogContent for enter/exit:
+data-[state=open]:animate-in data-[state=closed]:animate-out
+data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0
+data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95
+
+EMPTY STATE (no results): "No results for '{query}'" centered, text-slate-500, py-6
+
+FOOTER (inside dialog, below CommandList):
+Small row: "↑↓ navigate" "↵ select" "esc close" — text-[11px] text-slate-400, border-top, p-2
+
+
+13.
+TASK: Build app/(dashboard)/automations/page.tsx — Automation rules management.
+
+BACKEND API CONTRACTS:
+
+GET /v1/automations?active=true
+Response: { data: [{ id, name, trigger, keywords, actions, active, priority, createdAt }] }
+Trigger types: keyword_match
+Actions: auto_reply (with message), auto_tag (with tag), auto_assign (with userId)
+
+POST /v1/automations
+Body: { name, trigger: "keyword_match", keywords: string[], actions: [{ type, config }], priority?: number }
+Error: AUTOMATION_DUPLICATE_NAME (409)
+
+PATCH /v1/automations/:id
+Body: partial fields (name, keywords, actions, priority)
+
+POST /v1/automations/:id/toggle
+Response: { active: boolean } (toggles current state)
+
+DELETE /v1/automations/:id
+
+AUTOMATIONS LIST PAGE:
+
+Header: "Automations" + "New Rule" primary CTA
+Subtitle: "Automatically respond to keywords, tag contacts, or assign conversations."
+
+FILTER ROW:
+- Status filter: All / Active / Inactive (toggle pills)
+- Search input (filter by name/keyword, client-side since list is typically small)
+
+RULE CARDS (list, not table — each rule is a card):
+Each card (bg-white, border, rounded-lg, p-4, flex items-center justify-between):
+- Left: 
+  - Rule name (font-medium)
+  - Keywords badges: "book", "appointment" (small teal pills)
+  - Actions summary: "→ Reply + Tag 'interested'" (text-sm text-slate-500)
+- Right:
+  - Active toggle (Switch component)
+  - Priority badge: "#1" (small, slate)
+  - Actions dropdown: Edit / Delete
+
+EMPTY STATE: Illustration + "No automation rules yet" + "Create your first rule to auto-respond to patient messages"
+
+CREATE/EDIT DIALOG (large modal, max-w-lg):
+
+Rule name: text input (required, unique)
+
+TRIGGER SECTION:
+Trigger type: "When message contains keywords" (only option for MVP — read-only label)
+Keywords: tag-style multi-input. Type word → Enter → adds as pill. X to remove.
+Match behavior: "Any keyword matches" (implicit OR — backend matches any)
+
+ACTIONS SECTION (up to 3 actions, at least 1 required):
+"+ Add Action" button → dropdown: Auto Reply / Auto Tag / Auto Assign
+
+Each action row:
+- Auto Reply: textarea for reply message (max 1024 chars)
+- Auto Tag: tag input (what tag to add to contact)
+- Auto Assign: team member select dropdown (fetched from GET /v1/team)
+
+Remove action: X button on each row
+
+Priority: number input (1 = highest, optional, defaults to 10)
+
+FOOTER: "Cancel" + "Save Rule" (teal primary)
+On save → POST or PATCH → close dialog → refetch list → toast "Rule saved"
+On delete → confirm dialog → DELETE → toast "Rule deleted"
+
+DESIGN NOTES:
+- Keep it simple — this is a basic rule builder, not a visual workflow editor
+- Rules are evaluated in priority order on each inbound message
+- Show "Active" vs "Inactive" clearly (inactive cards slightly faded, opacity-75)
+
