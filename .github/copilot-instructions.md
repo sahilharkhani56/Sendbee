@@ -31,10 +31,10 @@ Type `/graphify` in Copilot Chat to build or update the knowledge graph.
 PHASE:         Phase 1 — Foundation MVP (Weeks 1–8)
 CURRENT STEP:  Frontend (Next.js 14)
 STEP STATUS:   NOT STARTED
-COMPLETED:     Step 0 (Scaffolding), Step 1 (DB Schema), Step 2 (Auth + 3-Tier), Step 3 (WhatsApp Integration), Step 4 (Contact Management), Step 5 (Conversation Inbox), Step 6 (Appointment System), Step 7 (Campaign & Broadcast), Step 8 (Dashboard & Analytics), Step 9 (Billing & Subscription), Step 10 (Settings & Team), Backend Gaps (Socket.io, Reminders, Media, Leaves, CI/CD)
+COMPLETED:     Step 0 (Scaffolding), Step 1 (DB Schema), Step 2 (Auth + 3-Tier), Step 3 (WhatsApp Integration), Step 4 (Contact Management), Step 5 (Conversation Inbox), Step 6 (Appointment System), Step 7 (Campaign & Broadcast), Step 8 (Dashboard & Analytics), Step 9 (Billing & Subscription), Step 10 (Settings & Team), Step 11 (Automation Rules), Backend Gaps (Socket.io, Reminders, Media, Leaves, CI/CD, Automations, Booking Confirmation)
 
-E2E TEST STATUS (Steps 0–7):
-  ✅ 266 passed / 1 failed / 267 total (April 29, 2026)
+E2E TEST STATUS (Steps 0–11):
+  ✅ 403 passed / 0 failed / 403 total (April 30, 2026)
   ✅ Step 0: 3 tests — health check, status, timestamp
   ✅ Step 1: 5 tests — DB connectivity, route existence (contacts, conversations, auth/me, team)
   ✅ Step 2: 18 tests — OTP send/verify, signup flow, /me, token refresh, team invite/list, logout
@@ -43,9 +43,13 @@ E2E TEST STATUS (Steps 0–7):
   ✅ Step 5: 47 tests — conversation list/filters/pagination, detail, message thread, reply (session guard), assignment, status toggle, mark-read, internal notes, quick replies CRUD, error cases
   ✅ Step 6: 67 tests — provider CRUD/validation/list/detail/update/delete, slot availability (working hours + breaks + Sunday + missing date), booking create/double-booking/detail/list/filters/pagination/validation, complete, cancel, no-show, reschedule (atomic cancel+book), today's summary, auth errors
   ✅ Step 7: 94 tests — template CRUD/validation/duplicate/list/filter/detail/update/approve/reject, campaign CRUD/validation/detail/update/list/filter/pagination, send (approved guard + no-contacts guard + double-send lock), pause/resume, simulate delivery, stats (delivery rate + read rate + pending), cancel, delete (draft only), template delete (in-use guard + FK cleanup), auth errors
+  ✅ Step 8: 19 tests — KPI overview (messages/conversations/appointments/contacts), message volume (7-day breakdown), appointment summary (today + past7Days), conversation analytics, cache behavior, auth errors
+  ✅ Step 9: 22 tests — plan listing (4+ plans with pricing), current subscription, start trial (+ duplicate guard), check limits (contacts/messages), usage tracking, payment history, upgrade (trial→starter→growth), downgrade rejection, cancel subscription, auth errors
+  ✅ Step 10: 22 tests — settings all (aggregate), business profile CRUD, business hours (7-day config + validation), away message (toggle + outsideHoursOnly), WhatsApp linking (encrypted token + masking), unlink, validation (invalid email, close<open), auth errors
+  ✅ Step 11: 24 tests — automation rule CRUD, duplicate name guard, validation (empty/no-actions), list (filter active), detail (trigger+keywords), update (name+priority), toggle active/inactive, delete, auth errors
   ⚠️ WhatsApp send tests skipped (graph.facebook.com unreachable from org network)
   ⚠️ Super admin tests skipped (no seeded super admin)
-  Test file: e2e-test.cjs (~1600 lines, zero npm deps, native Node.js http/https/crypto)
+  Test file: e2e-test.cjs (~2200 lines, zero npm deps, native Node.js http/https/crypto)
 
 WHAT IS BUILT SO FAR:
   ✅ Turborepo monorepo (apps: web, admin, api, webhook, worker)
@@ -136,6 +140,10 @@ WHAT IS BUILT SO FAR:
   ✅ WhatsApp SDK enhanced — getMediaUrl() + downloadMedia() methods added
   ✅ Contact auto-tagging on inbound — new contacts tagged with "new"
   ✅ CI/CD pipeline enhanced — concurrency control, deploy job placeholder
+  ✅ Automation rules API — CRUD + duplicate name guard + toggle active/inactive + keyword trigger
+  ✅ Automation engine (webhook) — keyword matching on inbound → auto-reply, auto-tag, auto-assign
+  ✅ Booking confirmation message — auto-sends WhatsApp template on appointment creation
+  ✅ E2E test suite expanded (e2e-test.cjs) — 403 assertions across Steps 0–11
 
 CURRENT TASK: Frontend (Next.js 14)
   → Login page (phone → OTP → verify → dashboard)
@@ -150,13 +158,15 @@ CURRENT TASK: Frontend (Next.js 14)
 NEXT STEP: Production Deployment (Docker + AWS)
 
 BLOCKERS / DECISIONS PENDING:
-  → [x] E2E testing completed for Steps 0–7 (266/267 passing)
+  → [x] E2E testing completed for Steps 0–11 (403/403 passing)
   → [x] Socket.io real-time layer implemented (JWT auth + tenant isolation)
   → [x] Reminder worker implemented (polling-based, Upstash REST)
   → [x] No-show detection + follow-up implemented
   → [x] Holiday/leave management implemented
   → [x] Media download pipeline implemented
   → [x] CI/CD pipeline enhanced
+  → [x] Automation rules engine implemented (keyword → auto-reply/tag/assign)
+  → [x] Booking confirmation message implemented
   → [ ] Real WhatsApp Cloud API send testing deferred (org network blocks graph.facebook.com)
   → [ ] Super admin seed data needed for admin auth E2E tests
   → [ ] WhatsApp booking flow deferred (requires real WA Cloud API for interactive messages)
@@ -191,7 +201,9 @@ FILES MODIFIED SO FAR:
   → apps/api/src/socket.ts                  (Socket.io server — JWT auth, tenant rooms, emit helpers)
   → apps/worker/src/index.ts                (Reminder worker — 24h/2h reminders + no-show detection + follow-up)
   → .github/workflows/ci.yml               (CI/CD — lint, type-check, build + deploy placeholder)
-  → e2e-test.cjs                            (E2E test suite — 267 tests, Steps 0–7)
+  → apps/api/src/routes/automations.ts      (Automation rules CRUD — create, list, detail, update, toggle, delete)
+  → apps/webhook/src/automations.ts         (Automation engine — keyword matching → auto-reply, auto-tag, auto-assign)
+  → e2e-test.cjs                            (E2E test suite — 403 tests, Steps 0–11)
 ```
 
 ---

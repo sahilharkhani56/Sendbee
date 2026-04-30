@@ -1580,9 +1580,416 @@ async function step7() {
   r = await req("GET", "/v1/campaigns");
   assert(r.status === 401, "Campaigns no auth → 401");
 }
+
+// ═══════════════════════════════════════════════════════════
+// STEP 8 — Dashboard & Analytics
+// ═══════════════════════════════════════════════════════════
+async function step8() {
+  console.log("\n\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550");
+  console.log("STEP 8 \u2014 Dashboard & Analytics");
+  console.log("\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550");
+  if (!state.tenantToken) { console.log("  skip (no token)"); return; }
+  var h = auth(state.tenantToken);
+  var r;
+
+  // 8a. KPI Overview
+  console.log("  --- 8a. KPI overview ---");
+  r = await req("GET", "/v1/dashboard/overview", null, h);
+  if (r.status !== 200) console.log("  [debug] overview response:", r.status, JSON.stringify(r.data).slice(0, 200));
+  assert(r.status === 200, "Overview → 200");
+  assert(r.data && r.data.data !== undefined, "Has data");
+  if (r.data && r.data.data) {
+    assert(r.data.data.messages !== undefined, "Has messages KPI");
+    assert(r.data.data.conversations !== undefined, "Has conversations KPI");
+    assert(r.data.data.appointments !== undefined, "Has appointments KPI");
+    assert(r.data.data.contacts !== undefined, "Has contacts KPI");
+  }
+
+  // 8b. Message volume chart (7-day)
+  console.log("  --- 8b. Message volume ---");
+  r = await req("GET", "/v1/dashboard/messages", null, h);
+  if (r.status !== 200) console.log("  [debug] messages response:", r.status, JSON.stringify(r.data).slice(0, 200));
+  assert(r.status === 200, "Message volume → 200");
+  assert(r.data && r.data.data !== undefined, "Has data wrapper");
+  if (r.data && r.data.data) {
+    assert(Array.isArray(r.data.data.days), "Has days array");
+    assert(r.data.data.days.length === 7, "7 days of data");
+    assert(r.data.data.days[0].date !== undefined, "Has date field");
+    assert(r.data.data.days[0].inbound !== undefined, "Has inbound count");
+    assert(r.data.data.days[0].outbound !== undefined, "Has outbound count");
+  }
+
+  // 8c. Appointment summary
+  console.log("  --- 8c. Appointment summary ---");
+  r = await req("GET", "/v1/dashboard/appointments", null, h);
+  assert(r.status === 200, "Appointment summary → 200");
+  assert(r.data.data !== undefined, "Has data");
+  assert(r.data.data.today !== undefined, "Has today");
+  assert(r.data.data.past7Days !== undefined, "Has past7Days");
+
+  // 8d. Conversation analytics
+  console.log("  --- 8d. Conversation analytics ---");
+  r = await req("GET", "/v1/dashboard/conversations", null, h);
+  assert(r.status === 200, "Conversation analytics → 200");
+  assert(r.data.data !== undefined, "Has data");
+  assert(r.data.data.open !== undefined, "Has open count");
+  assert(r.data.data.resolved !== undefined, "Has resolved count");
+  assert(r.data.data.total !== undefined, "Has total count");
+
+  // 8e. Redis cache test (second call should use cache)
+  console.log("  --- 8e. Cache behavior ---");
+  r = await req("GET", "/v1/dashboard/overview", null, h);
+  assert(r.status === 200, "Cached call → 200");
+
+  // 8f. Auth errors
+  console.log("  --- 8f. Auth errors ---");
+  r = await req("GET", "/v1/dashboard/overview");
+  assert(r.status === 401, "Dashboard no auth → 401");
+}
+
+// ═══════════════════════════════════════════════════════════
+// STEP 9 — Billing & Subscription
+// ═══════════════════════════════════════════════════════════
+async function step9() {
+  console.log("\n\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550");
+  console.log("STEP 9 \u2014 Billing & Subscription");
+  console.log("\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550");
+  if (!state.tenantToken) { console.log("  skip (no token)"); return; }
+  var h = auth(state.tenantToken);
+  var r;
+
+  // 9a. List plans
+  console.log("  --- 9a. List plans ---");
+  r = await req("GET", "/v1/billing/plans", null, h);
+  assert(r.status === 200, "Plans → 200");
+  assert(r.data.plans !== undefined, "Has plans");
+  assert(r.data.plans.length >= 4, "At least 4 plans");
+  var trial = r.data.plans.find(function(p) { return p.id === "trial"; });
+  assert(trial !== undefined, "Has trial plan");
+  assert(trial.price === 0, "Trial is free");
+  var starter = r.data.plans.find(function(p) { return p.id === "starter"; });
+  assert(starter !== undefined, "Has starter plan");
+  assert(starter.price === 99900, "Starter = ₹999");
+
+  // 9b. Current subscription (may be null for new tenant)
+  console.log("  --- 9b. Current subscription ---");
+  r = await req("GET", "/v1/billing/current", null, h);
+  assert(r.status === 200, "Current → 200");
+  assert(r.data.plan !== undefined, "Has plan info");
+  assert(r.data.usage !== undefined, "Has usage info");
+
+  // 9c. Start trial
+  console.log("  --- 9c. Start trial ---");
+  r = await req("POST", "/v1/billing/start-trial", {}, h);
+  if (r.status === 200 || r.status === 201) {
+    assert(true, "Start trial → success");
+    if (r.data.subscription) {
+      assert(r.data.subscription.plan === "trial", "Plan = trial");
+    }
+  } else {
+    // Trial may already exist from auto-provisioning
+    assert(r.status === 409, "Trial already exists → 409");
+  }
+
+  // 9d. Duplicate trial
+  console.log("  --- 9d. Duplicate trial ---");
+  r = await req("POST", "/v1/billing/start-trial", {}, h);
+  assert(r.status === 409, "Duplicate trial → 409");
+
+  // 9e. Check limits (requires resource query param)
+  console.log("  --- 9e. Check limits ---");
+  r = await req("GET", "/v1/billing/check-limits?resource=contacts", null, h);
+  assert(r.status === 200, "Check contacts limit → 200");
+  assert(r.data.allowed !== undefined, "Has allowed field");
+  assert(r.data.limit !== undefined, "Has limit field");
+  assert(r.data.current !== undefined, "Has current field");
+
+  r = await req("GET", "/v1/billing/check-limits?resource=messages", null, h);
+  assert(r.status === 200, "Check messages limit → 200");
+
+  // 9f. Usage
+  console.log("  --- 9f. Usage ---");
+  r = await req("GET", "/v1/billing/usage", null, h);
+  assert(r.status === 200, "Usage → 200");
+  assert(r.data.messages !== undefined, "Has messages usage");
+  assert(r.data.contacts !== undefined, "Has contacts usage");
+  assert(r.data.plan !== undefined, "Has plan field");
+
+  // 9g. Payment history
+  console.log("  --- 9g. Payment history ---");
+  r = await req("GET", "/v1/billing/payments", null, h);
+  assert(r.status === 200, "Payments → 200");
+  assert(Array.isArray(r.data.payments), "Returns payments array");
+
+  // 9h. Upgrade plan (from trial to starter — uses upgrade since trial sub exists)
+  console.log("  --- 9h. Upgrade plan ---");
+  r = await req("POST", "/v1/billing/upgrade", { plan: "starter" }, h);
+  assert(r.status === 200, "Upgrade trial→starter → 200");
+
+  // 9i. Upgrade again (starter → growth)
+  console.log("  --- 9i. Upgrade again ---");
+  r = await req("POST", "/v1/billing/upgrade", { plan: "growth" }, h);
+  assert(r.status === 200, "Upgrade starter→growth → 200");
+
+  // 9j. Downgrade rejected
+  console.log("  --- 9j. Downgrade rejected ---");
+  r = await req("POST", "/v1/billing/upgrade", { plan: "starter" }, h);
+  assert(r.status === 400, "Downgrade → 400");
+
+  // 9k. Cancel subscription
+  console.log("  --- 9k. Cancel subscription ---");
+  r = await req("POST", "/v1/billing/cancel", {}, h);
+  assert(r.status === 200, "Cancel → 200");
+  assert(r.data.message !== undefined, "Has message");
+
+  // 9l. Auth errors
+  console.log("  --- 9l. Auth errors ---");
+  r = await req("GET", "/v1/billing/plans");
+  assert(r.status === 401, "Billing no auth → 401");
+}
+
+// ═══════════════════════════════════════════════════════════
+// STEP 10 — Settings & Team
+// ═══════════════════════════════════════════════════════════
+async function step10() {
+  console.log("\n\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550");
+  console.log("STEP 10 \u2014 Settings & Team");
+  console.log("\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550");
+  if (!state.tenantToken) { console.log("  skip (no token)"); return; }
+  var h = auth(state.tenantToken);
+  var r;
+
+  // 10a. Get all settings (aggregate)
+  console.log("  --- 10a. Get all settings ---");
+  r = await req("GET", "/v1/settings/all", null, h);
+  assert(r.status === 200, "Settings all → 200");
+  assert(r.data.business !== undefined, "Has business section");
+  assert(r.data.whatsapp !== undefined, "Has whatsapp section");
+  assert(r.data.businessHours !== undefined, "Has businessHours section");
+  assert(r.data.awayMessage !== undefined, "Has awayMessage section");
+
+  // 10b. Business profile
+  console.log("  --- 10b. Business profile ---");
+  r = await req("PUT", "/v1/settings/business", {
+    name: "Test Clinic Updated",
+    email: "clinic@test.com",
+    city: "Mumbai",
+    state: "Maharashtra",
+    pincode: "400001",
+    timezone: "Asia/Kolkata",
+  }, h);
+  assert(r.status === 200, "Update profile → 200");
+
+  r = await req("GET", "/v1/settings/business", null, h);
+  assert(r.status === 200, "Get profile → 200");
+  assert(r.data.name === "Test Clinic Updated", "Name updated");
+  assert(r.data.city === "Mumbai", "City set");
+
+  // 10c. Business hours
+  console.log("  --- 10c. Business hours ---");
+  r = await req("PUT", "/v1/settings/business-hours", {
+    monday: { enabled: true, open: "09:00", close: "18:00" },
+    tuesday: { enabled: true, open: "09:00", close: "18:00" },
+    wednesday: { enabled: true, open: "09:00", close: "18:00" },
+    thursday: { enabled: true, open: "09:00", close: "18:00" },
+    friday: { enabled: true, open: "09:00", close: "18:00" },
+    saturday: { enabled: true, open: "10:00", close: "14:00" },
+    sunday: { enabled: false },
+  }, h);
+  assert(r.status === 200, "Set hours → 200");
+
+  r = await req("GET", "/v1/settings/business-hours", null, h);
+  assert(r.status === 200, "Get hours → 200");
+  assert(r.data.businessHours !== undefined, "Has businessHours");
+  assert(r.data.businessHours.monday !== undefined, "Has monday");
+  assert(r.data.businessHours.monday.enabled === true, "Monday enabled");
+
+  // 10d. Away message
+  console.log("  --- 10d. Away message ---");
+  r = await req("PUT", "/v1/settings/away-message", {
+    enabled: true,
+    message: "We are currently closed. We will respond during business hours.",
+    outsideHoursOnly: true,
+  }, h);
+  assert(r.status === 200, "Set away → 200");
+
+  r = await req("GET", "/v1/settings/away-message", null, h);
+  assert(r.status === 200, "Get away → 200");
+  assert(r.data.awayMessage.enabled === true, "Away enabled");
+  assert(r.data.awayMessage.outsideHoursOnly === true, "Outside hours only");
+
+  // 10e. WhatsApp settings (link)
+  console.log("  --- 10e. WhatsApp settings ---");
+  r = await req("PUT", "/v1/settings/whatsapp", {
+    waPhoneId: WA_PHONE_ID,
+    waBusinessId: WA_BUSINESS_ID,
+    waAccessToken: "EAAtest_token_12345678",
+  }, h);
+  assert(r.status === 200, "Link WhatsApp → 200");
+
+  r = await req("GET", "/v1/settings/whatsapp", null, h);
+  assert(r.status === 200, "Get WA settings → 200");
+  assert(r.data.waPhoneId === WA_PHONE_ID, "Phone ID matches");
+  assert(r.data.isLinked === true, "Shows as linked");
+  // Token should be masked
+  if (r.data.waAccessToken) {
+    assert(r.data.waAccessToken.includes("****"), "Token is masked");
+  }
+
+  // 10f. Unlink WhatsApp
+  console.log("  --- 10f. Unlink WhatsApp ---");
+  r = await req("DELETE", "/v1/settings/whatsapp", null, h);
+  assert(r.status === 200, "Unlink → 200");
+
+  r = await req("GET", "/v1/settings/whatsapp", null, h);
+  assert(r.status === 200, "Get after unlink → 200");
+  assert(r.data.isLinked === false, "Shows as unlinked");
+
+  // 10g. Validation
+  console.log("  --- 10g. Validation ---");
+  r = await req("PUT", "/v1/settings/business", { email: "not-an-email" }, h);
+  assert(r.status === 400, "Invalid email → 400");
+
+  r = await req("PUT", "/v1/settings/business-hours", {
+    monday: { enabled: true, open: "20:00", close: "08:00" },
+    tuesday: { enabled: false },
+    wednesday: { enabled: false },
+    thursday: { enabled: false },
+    friday: { enabled: false },
+    saturday: { enabled: false },
+    sunday: { enabled: false },
+  }, h);
+  assert(r.status === 400, "Invalid hours (close < open) → 400");
+
+  // 10h. Auth errors
+  console.log("  --- 10h. Auth errors ---");
+  r = await req("GET", "/v1/settings/all");
+  assert(r.status === 401, "Settings no auth → 401");
+}
+
+// ═══════════════════════════════════════════════════════════
+// STEP 11 — Automation Rules
+// ═══════════════════════════════════════════════════════════
+async function stepAutomations() {
+  console.log("\n\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550");
+  console.log("STEP 11 \u2014 Automation Rules");
+  console.log("\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550");
+  if (!state.tenantToken) { console.log("  skip (no token)"); return; }
+  var h = auth(state.tenantToken);
+  var r;
+
+  // 11a. Create automation rule
+  console.log("  --- 11a. Create rules ---");
+  r = await req("POST", "/v1/automations", {
+    name: "Business Hours Auto-Reply",
+    trigger: { type: "keyword", keywords: ["hours", "timing", "open"], matchType: "contains" },
+    actions: [{ type: "reply_text", text: "Our clinic is open Mon-Fri 9 AM to 6 PM, Sat 10 AM to 2 PM." }],
+    priority: 10,
+  }, h);
+  assert(r.status === 201, "Create rule → 201");
+  assert(r.data.data.id !== undefined, "Rule has ID");
+  assert(r.data.data.name === "Business Hours Auto-Reply", "Name correct");
+  assert(r.data.data.isActive === true, "Active by default");
+  state.automationId = r.data.data.id;
+
+  r = await req("POST", "/v1/automations", {
+    name: "Location Auto-Reply",
+    trigger: { type: "keyword", keywords: ["location", "address", "where"], matchType: "contains" },
+    actions: [
+      { type: "reply_text", text: "We are located at 123 Health Street, Mumbai 400001." },
+      { type: "add_tag", tag: "asked-location" },
+    ],
+    priority: 5,
+  }, h);
+  assert(r.status === 201, "Create rule 2 → 201");
+  state.automationId2 = r.data.data.id;
+
+  // 11b. Duplicate name
+  console.log("  --- 11b. Duplicate name ---");
+  r = await req("POST", "/v1/automations", {
+    name: "Business Hours Auto-Reply",
+    trigger: { type: "keyword", keywords: ["test"] },
+    actions: [{ type: "reply_text", text: "test" }],
+  }, h);
+  assert(r.status === 409, "Duplicate name → 409");
+  assert(r.data.error.code === "AUTOMATION_DUPLICATE", "Code: AUTOMATION_DUPLICATE");
+
+  // 11c. Validation
+  console.log("  --- 11c. Validation ---");
+  r = await req("POST", "/v1/automations", {}, h);
+  assert(r.status === 400, "Empty → 400");
+
+  r = await req("POST", "/v1/automations", {
+    name: "No actions",
+    trigger: { type: "keyword", keywords: ["test"] },
+    actions: [],
+  }, h);
+  assert(r.status === 400, "Empty actions → 400");
+
+  // 11d. List rules
+  console.log("  --- 11d. List rules ---");
+  r = await req("GET", "/v1/automations", null, h);
+  assert(r.status === 200, "List → 200");
+  assert(Array.isArray(r.data.data), "Returns array");
+  assert(r.data.data.length >= 2, "At least 2 rules");
+  assert(r.data.total >= 2, "Total >= 2");
+
+  // 11e. Filter active
+  r = await req("GET", "/v1/automations?active=true", null, h);
+  assert(r.status === 200, "Filter active → 200");
+  assert(r.data.data.length >= 2, "All active");
+
+  // 11f. Detail
+  console.log("  --- 11f. Detail ---");
+  r = await req("GET", "/v1/automations/" + state.automationId, null, h);
+  assert(r.status === 200, "Detail → 200");
+  assert(r.data.data.id === state.automationId, "Correct ID");
+  assert(r.data.data.trigger.type === "keyword", "Trigger type = keyword");
+  assert(r.data.data.trigger.keywords.length === 3, "3 keywords");
+
+  r = await req("GET", "/v1/automations/00000000-0000-0000-0000-000000000000", null, h);
+  assert(r.status === 404, "Non-existent → 404");
+
+  // 11g. Update rule
+  console.log("  --- 11g. Update rule ---");
+  r = await req("PATCH", "/v1/automations/" + state.automationId, {
+    name: "Clinic Hours Auto-Reply",
+    priority: 20,
+  }, h);
+  assert(r.status === 200, "Update → 200");
+  assert(r.data.data.name === "Clinic Hours Auto-Reply", "Name updated");
+  assert(r.data.data.priority === 20, "Priority updated");
+
+  // 11h. Toggle (disable)
+  console.log("  --- 11h. Toggle ---");
+  r = await req("POST", "/v1/automations/" + state.automationId2 + "/toggle", {}, h);
+  assert(r.status === 200, "Toggle → 200");
+  assert(r.data.data.isActive === false, "Now inactive");
+
+  r = await req("POST", "/v1/automations/" + state.automationId2 + "/toggle", {}, h);
+  assert(r.status === 200, "Toggle back → 200");
+  assert(r.data.data.isActive === true, "Now active again");
+
+  // 11i. Delete
+  console.log("  --- 11i. Delete ---");
+  r = await req("DELETE", "/v1/automations/" + state.automationId2, null, h);
+  assert(r.status === 200, "Delete → 200");
+
+  r = await req("GET", "/v1/automations/" + state.automationId2, null, h);
+  assert(r.status === 404, "Deleted → 404");
+
+  r = await req("DELETE", "/v1/automations/00000000-0000-0000-0000-000000000000", null, h);
+  assert(r.status === 404, "Delete non-existent → 404");
+
+  // 11j. Auth errors
+  console.log("  --- 11j. Auth errors ---");
+  r = await req("GET", "/v1/automations");
+  assert(r.status === 401, "Automations no auth → 401");
+}
+
 async function main() {
   console.log("============================================================");
-  console.log("  WhatsApp CRM \u2014 E2E Tests (Steps 0\u20137)");
+  console.log("  WhatsApp CRM \u2014 E2E Tests (Steps 0\u201310 + Automations)");
   console.log("  Server: " + BASE + "  |  " + new Date().toISOString());
   console.log("============================================================");
 
@@ -1596,6 +2003,10 @@ async function main() {
     await step5();
     await step6();
     await step7();
+    await step8();
+    await step9();
+    await step10();
+    await stepAutomations();
   } catch (err) {
     console.error("\n\ud83d\udca5 FATAL: " + err.message);
     console.error(err.stack);

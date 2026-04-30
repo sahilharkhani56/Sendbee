@@ -5,6 +5,54 @@ import { tenantAuthMiddleware, requirePermission } from "../middleware/auth";
 import { PERMISSIONS } from "@whatsapp-crm/shared";
 import { redis } from "../redis";
 
+// ─── Booking Confirmation (fire-and-forget) ───────────────
+
+async function sendBookingConfirmation(
+  tenantId: string,
+  booking: {
+    id: string;
+    startsAt: Date;
+    provider: { name: string };
+    contact: { phoneE164: string; name: string | null };
+  },
+): Promise<void> {
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: tenantId },
+    select: { waPhoneId: true, waAccessToken: true },
+  });
+  if (!tenant?.waPhoneId || !tenant.waAccessToken) return;
+
+  const { WhatsAppClient } = await import("@whatsapp-crm/whatsapp-sdk");
+  const wa = new WhatsAppClient({
+    phoneNumberId: tenant.waPhoneId,
+    accessToken: tenant.waAccessToken,
+  });
+
+  const timeStr = booking.startsAt.toLocaleTimeString("en-IN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+    timeZone: "Asia/Kolkata",
+  });
+  const dateStr = booking.startsAt.toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "Asia/Kolkata",
+  });
+
+  await wa.sendTemplate({
+    to: booking.contact.phoneE164,
+    templateName: "booking_confirmation",
+    languageCode: "en",
+    parameters: [
+      { type: "text", text: booking.contact.name || "there" },
+      { type: "text", text: booking.provider.name },
+      { type: "text", text: `${dateStr} at ${timeStr}` },
+    ],
+  });
+}
+
 // ─── Schemas ──────────────────────────────────────────────
 
 /** Working hours: { "monday": { "start": "09:00", "end": "17:00" }, ... } */
@@ -648,6 +696,9 @@ export async function appointmentRoutes(app: FastifyInstance) {
               { ex: Math.ceil(reminder2h / 1000) + 3600 },
             );
           }
+
+          // Send WhatsApp booking confirmation (fire-and-forget)
+          sendBookingConfirmation(tenantId, booking).catch(() => {});
 
           return reply.status(201).send({ data: booking });
         } finally {

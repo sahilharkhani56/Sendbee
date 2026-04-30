@@ -14,6 +14,7 @@ import { campaignRoutes } from "./routes/campaigns";
 import { dashboardRoutes } from "./routes/dashboard";
 import { billingRoutes } from "./routes/billing";
 import { settingsRoutes } from "./routes/settings";
+import { automationRoutes } from "./routes/automations";
 
 export async function buildApp() {
   const app = Fastify({
@@ -49,6 +50,7 @@ export async function buildApp() {
   await app.register(dashboardRoutes);        // /v1/dashboard/*
   await app.register(billingRoutes);          // /v1/billing/*
   await app.register(settingsRoutes);         // /v1/settings/*
+  await app.register(automationRoutes);       // /v1/automations/*
 
   return app;
 }

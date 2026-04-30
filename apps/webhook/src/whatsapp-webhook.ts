@@ -1,6 +1,8 @@
 import type { FastifyBaseLogger } from "fastify";
 import { MessageStatus, MessageType, prisma } from "@whatsapp-crm/database";
 import { markWebhookMessageProcessed, touchWaSessionWindow } from "./redis";
+import { downloadAndUploadMedia } from "./media";
+import { executeAutomations } from "./automations";
 
 export interface WhatsAppWebhookPayload {
   object?: string;
@@ -82,7 +84,7 @@ export async function processWhatsAppWebhook(
 
       const tenant = await prisma.tenant.findFirst({
         where: { waPhoneId: phoneNumberId },
-        select: { id: true },
+        select: { id: true, waAccessToken: true },
       });
 
       if (!tenant) {
@@ -98,7 +100,7 @@ export async function processWhatsAppWebhook(
       }
 
       for (const inboundMessage of value?.messages ?? []) {
-        await processInboundMessage(tenant.id, inboundMessage, contactNameByWaId, logger);
+        await processInboundMessage(tenant.id, inboundMessage, contactNameByWaId, logger, tenant.waAccessToken, phoneNumberId);
       }
 
       for (const statusEvent of value?.statuses ?? []) {
@@ -112,7 +114,9 @@ async function processInboundMessage(
   tenantId: string,
   inboundMessage: InboundWebhookMessage,
   contactNameByWaId: Map<string, string>,
-  logger: FastifyBaseLogger
+  logger: FastifyBaseLogger,
+  waAccessToken: string | null,
+  phoneNumberId: string
 ): Promise<void> {
   const isNewWebhookEvent = await markWebhookMessageProcessed(inboundMessage.id);
   if (!isNewWebhookEvent) {
@@ -182,7 +186,7 @@ async function processInboundMessage(
   const interactiveRaw = serializeUnknown(inboundMessage.interactive);
   const buttonRaw = serializeUnknown(inboundMessage.button);
 
-  await prisma.message.create({
+  const message = await prisma.message.create({
     data: {
       tenantId,
       conversationId: conversation.id,
@@ -204,6 +208,50 @@ async function processInboundMessage(
       createdAt: eventTime,
     },
   });
+
+  // ─── Media Download (background, non-blocking) ──────────
+  const mediaId =
+    inboundMessage.image?.id ||
+    inboundMessage.document?.id ||
+    inboundMessage.audio?.id ||
+    inboundMessage.video?.id;
+
+  if (mediaId && waAccessToken) {
+    // Fire and forget — don't block webhook response
+    downloadAndUploadMedia(mediaId, tenantId, waAccessToken, phoneNumberId)
+      .then((result) => {
+        if (result) {
+          // Update message content with S3 URL
+          prisma.message.update({
+            where: { id: message.id },
+            data: {
+              content: {
+                ...(message.content as Record<string, unknown>),
+                mediaUrl: result.url,
+                mediaKey: result.key,
+                mediaMimeType: result.mimeType,
+                mediaSize: result.fileSize,
+              },
+            },
+          }).catch((err) => logger.error({ err, messageId: message.id }, "Failed to update media URL"));
+        }
+      })
+      .catch((err) => logger.error({ err, mediaId }, "Media download failed"));
+  }
+
+  // ─── Automation Rules (fire-and-forget) ─────────────────
+  const isFirstMessage = contact.createdAt.getTime() >= Date.now() - 5000; // created within last 5s = new contact
+  executeAutomations({
+    tenantId,
+    contactId: contact.id,
+    conversationId: conversation.id,
+    messageText: inboundMessage.text?.body || null,
+    isFirstMessage,
+    waAccessToken,
+    waPhoneId: phoneNumberId,
+    contactPhone: from,
+    logger,
+  }).catch((err) => logger.error({ err }, "Automation execution failed"));
 }
 
 async function processStatusUpdate(
