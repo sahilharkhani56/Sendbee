@@ -4,6 +4,7 @@ import { Providers } from "@/components/providers";
 import { AuthInitializer } from "@/components/auth-initializer";
 import { ThemeInitializer } from "@/components/theme-initializer";
 import { Toaster } from "@/components/ui/toaster";
+import { CommandPalette } from "@/components/shared/command-palette";
 import "./globals.css";
 
 const inter = Inter({
@@ -31,6 +32,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <ThemeInitializer />
           <AuthInitializer />
           {children}
+          <CommandPalette />
           <Toaster />
         </Providers>
       </body>
