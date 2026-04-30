@@ -152,7 +152,8 @@ CURRENT TASK: Frontend (Next.js 14) — 13 Steps
   ✅ Step 4: Inbox page (3-column real-time chat)
   ✅ Step 5: Contacts pages (table + detail + timeline)
   ✅ Step 6: Appointments page (calendar + booking)
-  → Step 7: Campaigns pages (list + create wizard + stats)
+  ✅ Step 7: Campaigns pages (list + create wizard + stats)
+  → Step 8: Onboarding wizard
   → Step 8: Onboarding wizard (3-step: business → WA → team)
   → Step 9: Templates page (card grid + editor + live preview)
   → Step 10: Settings pages (4 tabs: General/WA/Team/Billing)
@@ -660,10 +661,10 @@ Update `[ ]` to `[x]` as you complete features.
 - [x] Provider filter, status filter, date navigation
 
 **Step 7 — Campaigns Pages** (app/(dashboard)/campaigns/page.tsx + [id] + /new)
-- [ ] Campaigns list table with status badges + stats
-- [ ] Campaign create wizard (4-step: Audience → Template → Schedule → Review)
-- [ ] Campaign detail page: delivery funnel chart + per-contact log table
-- [ ] Actions: Send/Pause/Resume/Cancel (state machine guards)
+- [x] Campaigns list table with status badges + stats
+- [x] Campaign create wizard (4-step: Audience → Template → Schedule → Review)
+- [x] Campaign detail page: delivery funnel chart + per-contact log table
+- [x] Actions: Send/Pause/Resume/Cancel (state machine guards)
 
 **Step 8 — Onboarding Wizard** (app/(onboarding)/setup/page.tsx)
 - [ ] 3-step wizard: Business Details → Connect WhatsApp → Invite Team
