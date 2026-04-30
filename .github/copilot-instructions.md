@@ -29,9 +29,9 @@ Type `/graphify` in Copilot Chat to build or update the knowledge graph.
 
 ```
 PHASE:         Phase 1 — Foundation MVP (Weeks 1–8)
-CURRENT STEP:  Frontend Step 6 — Appointments Page
+CURRENT STEP:  Production Deployment (Docker + AWS)
 STEP STATUS:   NOT STARTED
-COMPLETED:     Step 0 (Scaffolding), Step 1 (DB Schema), Step 2 (Auth + 3-Tier), Step 3 (WhatsApp Integration), Step 4 (Contact Management), Step 5 (Conversation Inbox), Step 6 (Appointment System), Step 7 (Campaign & Broadcast), Step 8 (Dashboard & Analytics), Step 9 (Billing & Subscription), Step 10 (Settings & Team), Step 11 (Automation Rules), Backend Gaps (Socket.io, Reminders, Media, Leaves, CI/CD, Automations, Booking Confirmation), Frontend Step 1 (Login), Frontend Step 2 (Dashboard Layout), Frontend Step 3 (Dashboard Page), Frontend Step 4 (Inbox Page), Frontend Step 5 (Contacts Pages)
+COMPLETED:     Step 0 (Scaffolding), Step 1 (DB Schema), Step 2 (Auth + 3-Tier), Step 3 (WhatsApp Integration), Step 4 (Contact Management), Step 5 (Conversation Inbox), Step 6 (Appointment System), Step 7 (Campaign & Broadcast), Step 8 (Dashboard & Analytics), Step 9 (Billing & Subscription), Step 10 (Settings & Team), Step 11 (Automation Rules), Backend Gaps (Socket.io, Reminders, Media, Leaves, CI/CD, Automations, Booking Confirmation), Frontend Step 1 (Login), Frontend Step 2 (Dashboard Layout), Frontend Step 3 (Dashboard Page), Frontend Step 4 (Inbox Page), Frontend Step 5 (Contacts Pages), Frontend Step 6 (Appointments), Frontend Step 7 (Campaigns), Frontend Step 8 (Onboarding Wizard), Frontend Step 9 (Templates), Frontend Step 10 (Settings), Frontend Step 11 (Mobile Responsive), Frontend Step 12 (Command Palette), Frontend Step 13 (Automations)
 
 E2E TEST STATUS (Steps 0–11):
   ✅ 403 passed / 0 failed / 403 total (April 30, 2026)
@@ -145,7 +145,9 @@ WHAT IS BUILT SO FAR:
   ✅ Booking confirmation message — auto-sends WhatsApp template on appointment creation
   ✅ E2E test suite expanded (e2e-test.cjs) — 403 assertions across Steps 0–11
 
-CURRENT TASK: Frontend (Next.js 14) — 13 Steps
+CURRENT TASK: Production Deployment (Docker + AWS)
+
+FRONTEND (Next.js 14) — ALL 13 STEPS COMPLETE ✅
   ✅ Step 1: Login page (phone → OTP → verify → dashboard)
   ✅ Step 2: Dashboard Layout (sidebar + header + mobile nav)
   ✅ Step 3: Dashboard page (KPI cards + charts)
@@ -154,13 +156,13 @@ CURRENT TASK: Frontend (Next.js 14) — 13 Steps
   ✅ Step 6: Appointments page (calendar + booking)
   ✅ Step 7: Campaigns pages (list + create wizard + stats)
   ✅ Step 8: Onboarding wizard (3-step: business → WA → team)
-  → Step 9: Templates page (card grid + editor + live preview)
-  → Step 10: Settings pages (4 tabs: General/WA/Team/Billing)
-  → Step 11: Mobile responsive polish (all breakpoints)
-  → Step 12: Command palette (Cmd+K)
-  → Step 13: Automations page (rules CRUD)
+  ✅ Step 9: Templates page (card grid + editor + live preview)
+  ✅ Step 10: Settings pages (4 tabs: General/WA/Team/Billing)
+  ✅ Step 11: Mobile responsive polish (all breakpoints)
+  ✅ Step 12: Command palette (Cmd+K global search + navigation)
+  ✅ Step 13: Automations page (rules CRUD + keyword badges + create/edit dialog)
 
-FRONTEND FOUNDATION (already built):
+FRONTEND FOUNDATION:
   ✅ Next.js 14 scaffold + Tailwind + shadcn/ui CSS vars + tailwindcss-animate
   ✅ Zustand auth store (accessToken in memory, refreshToken in cookie)
   ✅ API client (fetch wrapper, auto JWT, 401 → refresh → retry)
@@ -173,8 +175,16 @@ FRONTEND FOUNDATION (already built):
   ✅ KPI cards grid — 4 cards with icons (messages, conversations, appointments, contacts)
   ✅ Dashboard Page — KPI cards (real data hooks + skeletons), message volume bar chart (Recharts), appointment donut chart, quick actions grid, conversation stats panel
   ✅ Inbox Page — 3-column layout (conversation list + chat thread + contact sidebar), message bubbles (WhatsApp-style), reply box (Enter to send), filter tabs, search, mobile responsive (stacked columns)
+  ✅ Contacts — TanStack-style table + card toggle, search, tag filter, CSV import, detail page (4 tabs)
+  ✅ Appointments — Day/Week/List views, today summary cards, booking dialog (4-step wizard), status actions
+  ✅ Campaigns — list + detail (delivery funnel) + create wizard (4-step: Audience→Template→Schedule→Review)
+  ✅ Onboarding — 3-step wizard (Business→WhatsApp→Team), progress bar, skip support
+  ✅ Templates — card grid + live WhatsApp phone mockup preview, variable insertion, button builder
+  ✅ Settings — 4-tab layout (General/WhatsApp/Team/Billing), business profile, hours, away message, plan cards, usage meters
+  ✅ Command Palette — Ctrl+K/Cmd+K, arrow keys, page navigation + quick actions
+  ✅ Automations — rule cards (keyword badges + action summaries), active/inactive toggle, create/edit dialog
 
-NEXT STEP: Production Deployment (Docker + AWS)
+NEXT STEP: Dockerize + Deploy to AWS ECS (ap-south-1)
 
 BLOCKERS / DECISIONS PENDING:
   → [x] E2E testing completed for Steps 0–11 (403/403 passing)
@@ -223,6 +233,9 @@ FILES MODIFIED SO FAR:
   → apps/api/src/routes/automations.ts      (Automation rules CRUD — create, list, detail, update, toggle, delete)
   → apps/webhook/src/automations.ts         (Automation engine — keyword matching → auto-reply, auto-tag, auto-assign)
   → e2e-test.cjs                            (E2E test suite — 403 tests, Steps 0–11)
+  → apps/web/src/app/(dashboard)/settings/page.tsx        (Settings — 4 tabs: General/WhatsApp/Team/Billing)
+  → apps/web/src/components/shared/command-palette.tsx     (Cmd+K command palette — navigation + actions)
+  → apps/web/src/app/(dashboard)/automations/page.tsx     (Automations — rule cards + create/edit dialog)
 ```
 
 ---
@@ -677,30 +690,30 @@ Update `[ ]` to `[x]` as you complete features.
 - [x] Save Draft + Submit for Approval actions
 
 **Step 10 — Settings Pages** (app/(dashboard)/settings/*)
-- [ ] 4 tabs: General / WhatsApp / Team / Billing
-- [ ] General: business profile + business hours (7-day) + away message
-- [ ] WhatsApp: connection status, link/unlink, credential update
-- [ ] Team: member table, invite form, role management, RBAC guards
-- [ ] Billing: plan cards, usage meters, payment history, upgrade/cancel
+- [x] 4 tabs: General / WhatsApp / Team / Billing
+- [x] General: business profile + business hours (7-day) + away message
+- [x] WhatsApp: connection status, link/unlink, credential update
+- [x] Team: member table, invite form, role management, RBAC guards
+- [x] Billing: plan cards, usage meters, payment history, upgrade/cancel
 
 **Step 11 — Mobile Responsive Polish**
-- [ ] Audit all pages at 375px/390px/768px/1440px
-- [ ] Inbox → single-column + bottom sheet on mobile
-- [ ] Tables → card view or horizontal scroll on mobile
-- [ ] Touch targets ≥ 44px, native date pickers, top-center toasts on mobile
-- [ ] Dark mode verification (contrast, borders, inputs)
+- [x] Audit all pages at 375px/390px/768px/1440px
+- [x] Inbox → single-column + bottom sheet on mobile
+- [x] Tables → card view or horizontal scroll on mobile
+- [x] Touch targets ≥ 44px, native date pickers, top-center toasts on mobile
+- [x] Dark mode verification (contrast, borders, inputs)
 
 **Step 12 — Command Palette** (components/shared/command-palette.tsx)
-- [ ] Cmd+K trigger (global keyboard listener)
-- [ ] shadcn Command component in Dialog
-- [ ] Search contacts (live API), navigate pages, quick actions
-- [ ] Recent contacts from localStorage, keyboard navigation
+- [x] Cmd+K trigger (global keyboard listener)
+- [x] shadcn Command component in Dialog
+- [x] Search contacts (live API), navigate pages, quick actions
+- [x] Recent contacts from localStorage, keyboard navigation
 
 **Step 13 — Automations Page** (app/(dashboard)/automations/page.tsx)
-- [ ] Automation rules list (cards with keywords badges + actions summary)
-- [ ] Active/Inactive toggle per rule
-- [ ] Create/Edit dialog: name + keywords (multi-input) + actions (reply/tag/assign)
-- [ ] Priority ordering, delete with confirmation
+- [x] Automation rules list (cards with keywords badges + actions summary)
+- [x] Active/Inactive toggle per rule
+- [x] Create/Edit dialog: name + keywords (multi-input) + actions (reply/tag/assign)
+- [x] Priority ordering, delete with confirmation
 
 ---
 
