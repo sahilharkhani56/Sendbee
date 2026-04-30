@@ -151,8 +151,7 @@ CURRENT TASK: Frontend (Next.js 14) — 13 Steps
   ✅ Step 3: Dashboard page (KPI cards + charts)
   ✅ Step 4: Inbox page (3-column real-time chat)
   ✅ Step 5: Contacts pages (table + detail + timeline)
-  → Step 6: Appointments page (calendar + booking)
-  → Step 6: Appointments page (calendar + booking)
+  ✅ Step 6: Appointments page (calendar + booking)
   → Step 7: Campaigns pages (list + create wizard + stats)
   → Step 8: Onboarding wizard (3-step: business → WA → team)
   → Step 9: Templates page (card grid + editor + live preview)
@@ -655,10 +654,10 @@ Update `[ ]` to `[x]` as you complete features.
 - [x] Mobile: card view toggle instead of table
 
 **Step 6 — Appointments Page** (app/(dashboard)/appointments/page.tsx)
-- [ ] Calendar views: Month (overview dots) / Week (time grid) / Day (detailed slots)
-- [ ] Booking dialog: 4-step wizard (Contact → Provider+Date → Slot → Details)
-- [ ] Appointment detail panel (status actions: Complete/Cancel/No-Show/Reschedule)
-- [ ] Provider filter, status filter, date navigation
+- [x] Calendar views: Month (overview dots) / Week (time grid) / Day (detailed slots)
+- [x] Booking dialog: 4-step wizard (Contact → Provider+Date → Slot → Details)
+- [x] Appointment detail panel (status actions: Complete/Cancel/No-Show/Reschedule)
+- [x] Provider filter, status filter, date navigation
 
 **Step 7 — Campaigns Pages** (app/(dashboard)/campaigns/page.tsx + [id] + /new)
 - [ ] Campaigns list table with status badges + stats
