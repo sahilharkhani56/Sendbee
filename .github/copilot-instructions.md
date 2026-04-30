@@ -29,9 +29,9 @@ Type `/graphify` in Copilot Chat to build or update the knowledge graph.
 
 ```
 PHASE:         Phase 1 — Foundation MVP (Weeks 1–8)
-CURRENT STEP:  Frontend Step 2 — Dashboard Layout
+CURRENT STEP:  Frontend Step 3 — Dashboard Page (KPI + Charts)
 STEP STATUS:   IN PROGRESS
-COMPLETED:     Step 0 (Scaffolding), Step 1 (DB Schema), Step 2 (Auth + 3-Tier), Step 3 (WhatsApp Integration), Step 4 (Contact Management), Step 5 (Conversation Inbox), Step 6 (Appointment System), Step 7 (Campaign & Broadcast), Step 8 (Dashboard & Analytics), Step 9 (Billing & Subscription), Step 10 (Settings & Team), Step 11 (Automation Rules), Backend Gaps (Socket.io, Reminders, Media, Leaves, CI/CD, Automations, Booking Confirmation)
+COMPLETED:     Step 0 (Scaffolding), Step 1 (DB Schema), Step 2 (Auth + 3-Tier), Step 3 (WhatsApp Integration), Step 4 (Contact Management), Step 5 (Conversation Inbox), Step 6 (Appointment System), Step 7 (Campaign & Broadcast), Step 8 (Dashboard & Analytics), Step 9 (Billing & Subscription), Step 10 (Settings & Team), Step 11 (Automation Rules), Backend Gaps (Socket.io, Reminders, Media, Leaves, CI/CD, Automations, Booking Confirmation), Frontend Step 1 (Login), Frontend Step 2 (Dashboard Layout)
 
 E2E TEST STATUS (Steps 0–11):
   ✅ 403 passed / 0 failed / 403 total (April 30, 2026)
@@ -147,7 +147,7 @@ WHAT IS BUILT SO FAR:
 
 CURRENT TASK: Frontend (Next.js 14) — 13 Steps
   ✅ Step 1: Login page (phone → OTP → verify → dashboard)
-  → Step 2: Dashboard Layout (sidebar + header + mobile nav)
+  ✅ Step 2: Dashboard Layout (sidebar + header + mobile nav)
   → Step 3: Dashboard page (KPI cards + charts)
   → Step 4: Inbox page (3-column real-time chat)
   → Step 5: Contacts pages (table + detail + timeline)
@@ -169,6 +169,8 @@ FRONTEND FOUNDATION (already built):
   ✅ Type definitions (re-exports from @whatsapp-crm/shared + ApiError class)
   ✅ App Router structure: (auth)/login, (onboarding)/setup, (dashboard)/* routes
   ✅ Login page — split panel (teal branding left + form right), PhoneInput (+91 prefix, validation), OtpInput (6 boxes, auto-focus, paste, shake animation), 30s countdown resend, error toasts, redirect on success
+  ✅ Dashboard Layout — dark sidebar (240px, collapsible 64px), header (56px sticky, search+bell), mobile bottom nav (5 tabs, keyboard-aware)
+  ✅ KPI cards grid — 4 cards with icons (messages, conversations, appointments, contacts)
 
 NEXT STEP: Production Deployment (Docker + AWS)
 
@@ -622,10 +624,10 @@ Update `[ ]` to `[x]` as you complete features.
 - [x] Loading states, error toasts, countdown timer for resend
 
 **Step 2 — Dashboard Layout** (app/(dashboard)/layout.tsx)
-- [ ] Sidebar (240px, dark #111B21, collapsible → 64px icons only)
-- [ ] Header (56px, search trigger for Cmd+K, notifications bell, profile dropdown)
-- [ ] Mobile bottom nav (56px fixed, 5 icons: Home/Inbox/Contacts/Appointments/More)
-- [ ] Sidebar collapsed state persisted in localStorage
+- [x] Sidebar (240px, dark #111B21, collapsible → 64px icons only)
+- [x] Header (56px, search trigger for Cmd+K, notifications bell, profile dropdown)
+- [x] Mobile bottom nav (56px fixed, 5 icons: Home/Inbox/Contacts/Appointments/More)
+- [x] Sidebar collapsed state persisted in localStorage
 
 **Step 3 — Dashboard Page** (app/(dashboard)/page.tsx)
 - [ ] 4 KPI cards (messages, conversations, appointments, contacts) from GET /v1/dashboard/overview
