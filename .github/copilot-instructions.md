@@ -29,9 +29,9 @@ Type `/graphify` in Copilot Chat to build or update the knowledge graph.
 
 ```
 PHASE:         Phase 1 — Foundation MVP (Weeks 1–8)
-CURRENT STEP:  Frontend Step 5 — Contacts Pages
+CURRENT STEP:  Frontend Step 6 — Appointments Page
 STEP STATUS:   NOT STARTED
-COMPLETED:     Step 0 (Scaffolding), Step 1 (DB Schema), Step 2 (Auth + 3-Tier), Step 3 (WhatsApp Integration), Step 4 (Contact Management), Step 5 (Conversation Inbox), Step 6 (Appointment System), Step 7 (Campaign & Broadcast), Step 8 (Dashboard & Analytics), Step 9 (Billing & Subscription), Step 10 (Settings & Team), Step 11 (Automation Rules), Backend Gaps (Socket.io, Reminders, Media, Leaves, CI/CD, Automations, Booking Confirmation), Frontend Step 1 (Login), Frontend Step 2 (Dashboard Layout), Frontend Step 3 (Dashboard Page), Frontend Step 4 (Inbox Page)
+COMPLETED:     Step 0 (Scaffolding), Step 1 (DB Schema), Step 2 (Auth + 3-Tier), Step 3 (WhatsApp Integration), Step 4 (Contact Management), Step 5 (Conversation Inbox), Step 6 (Appointment System), Step 7 (Campaign & Broadcast), Step 8 (Dashboard & Analytics), Step 9 (Billing & Subscription), Step 10 (Settings & Team), Step 11 (Automation Rules), Backend Gaps (Socket.io, Reminders, Media, Leaves, CI/CD, Automations, Booking Confirmation), Frontend Step 1 (Login), Frontend Step 2 (Dashboard Layout), Frontend Step 3 (Dashboard Page), Frontend Step 4 (Inbox Page), Frontend Step 5 (Contacts Pages)
 
 E2E TEST STATUS (Steps 0–11):
   ✅ 403 passed / 0 failed / 403 total (April 30, 2026)
@@ -150,7 +150,8 @@ CURRENT TASK: Frontend (Next.js 14) — 13 Steps
   ✅ Step 2: Dashboard Layout (sidebar + header + mobile nav)
   ✅ Step 3: Dashboard page (KPI cards + charts)
   ✅ Step 4: Inbox page (3-column real-time chat)
-  → Step 5: Contacts pages (table + detail + timeline)
+  ✅ Step 5: Contacts pages (table + detail + timeline)
+  → Step 6: Appointments page (calendar + booking)
   → Step 6: Appointments page (calendar + booking)
   → Step 7: Campaigns pages (list + create wizard + stats)
   → Step 8: Onboarding wizard (3-step: business → WA → team)
@@ -647,11 +648,11 @@ Update `[ ]` to `[x]` as you complete features.
 - [x] Mobile: single-column with back navigation + bottom sheet for contact info
 
 **Step 5 — Contacts Pages** (app/(dashboard)/contacts/page.tsx + [id]/page.tsx)
-- [ ] Contacts table (TanStack Table v8, cursor pagination, sort, search)
-- [ ] Tag filter (multi-select), opt-out filter
-- [ ] CSV import dialog with progress bar
-- [ ] Contact detail page: 4 tabs (Overview/Timeline/Appointments/Notes)
-- [ ] Mobile: card view toggle instead of table
+- [x] Contacts table (TanStack Table v8, cursor pagination, sort, search)
+- [x] Tag filter (multi-select), opt-out filter
+- [x] CSV import dialog with progress bar
+- [x] Contact detail page: 4 tabs (Overview/Timeline/Appointments/Notes)
+- [x] Mobile: card view toggle instead of table
 
 **Step 6 — Appointments Page** (app/(dashboard)/appointments/page.tsx)
 - [ ] Calendar views: Month (overview dots) / Week (time grid) / Day (detailed slots)
