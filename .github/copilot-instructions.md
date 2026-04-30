@@ -29,9 +29,9 @@ Type `/graphify` in Copilot Chat to build or update the knowledge graph.
 
 ```
 PHASE:         Phase 1 — Foundation MVP (Weeks 1–8)
-CURRENT STEP:  Frontend Step 3 — Dashboard Page (KPI + Charts)
-STEP STATUS:   IN PROGRESS
-COMPLETED:     Step 0 (Scaffolding), Step 1 (DB Schema), Step 2 (Auth + 3-Tier), Step 3 (WhatsApp Integration), Step 4 (Contact Management), Step 5 (Conversation Inbox), Step 6 (Appointment System), Step 7 (Campaign & Broadcast), Step 8 (Dashboard & Analytics), Step 9 (Billing & Subscription), Step 10 (Settings & Team), Step 11 (Automation Rules), Backend Gaps (Socket.io, Reminders, Media, Leaves, CI/CD, Automations, Booking Confirmation), Frontend Step 1 (Login), Frontend Step 2 (Dashboard Layout)
+CURRENT STEP:  Frontend Step 5 — Contacts Pages
+STEP STATUS:   NOT STARTED
+COMPLETED:     Step 0 (Scaffolding), Step 1 (DB Schema), Step 2 (Auth + 3-Tier), Step 3 (WhatsApp Integration), Step 4 (Contact Management), Step 5 (Conversation Inbox), Step 6 (Appointment System), Step 7 (Campaign & Broadcast), Step 8 (Dashboard & Analytics), Step 9 (Billing & Subscription), Step 10 (Settings & Team), Step 11 (Automation Rules), Backend Gaps (Socket.io, Reminders, Media, Leaves, CI/CD, Automations, Booking Confirmation), Frontend Step 1 (Login), Frontend Step 2 (Dashboard Layout), Frontend Step 3 (Dashboard Page), Frontend Step 4 (Inbox Page)
 
 E2E TEST STATUS (Steps 0–11):
   ✅ 403 passed / 0 failed / 403 total (April 30, 2026)
@@ -148,8 +148,8 @@ WHAT IS BUILT SO FAR:
 CURRENT TASK: Frontend (Next.js 14) — 13 Steps
   ✅ Step 1: Login page (phone → OTP → verify → dashboard)
   ✅ Step 2: Dashboard Layout (sidebar + header + mobile nav)
-  → Step 3: Dashboard page (KPI cards + charts)
-  → Step 4: Inbox page (3-column real-time chat)
+  ✅ Step 3: Dashboard page (KPI cards + charts)
+  ✅ Step 4: Inbox page (3-column real-time chat)
   → Step 5: Contacts pages (table + detail + timeline)
   → Step 6: Appointments page (calendar + booking)
   → Step 7: Campaigns pages (list + create wizard + stats)
@@ -171,6 +171,8 @@ FRONTEND FOUNDATION (already built):
   ✅ Login page — split panel (teal branding left + form right), PhoneInput (+91 prefix, validation), OtpInput (6 boxes, auto-focus, paste, shake animation), 30s countdown resend, error toasts, redirect on success
   ✅ Dashboard Layout — dark sidebar (240px, collapsible 64px), header (56px sticky, search+bell), mobile bottom nav (5 tabs, keyboard-aware)
   ✅ KPI cards grid — 4 cards with icons (messages, conversations, appointments, contacts)
+  ✅ Dashboard Page — KPI cards (real data hooks + skeletons), message volume bar chart (Recharts), appointment donut chart, quick actions grid, conversation stats panel
+  ✅ Inbox Page — 3-column layout (conversation list + chat thread + contact sidebar), message bubbles (WhatsApp-style), reply box (Enter to send), filter tabs, search, mobile responsive (stacked columns)
 
 NEXT STEP: Production Deployment (Docker + AWS)
 
@@ -630,19 +632,19 @@ Update `[ ]` to `[x]` as you complete features.
 - [x] Sidebar collapsed state persisted in localStorage
 
 **Step 3 — Dashboard Page** (app/(dashboard)/page.tsx)
-- [ ] 4 KPI cards (messages, conversations, appointments, contacts) from GET /v1/dashboard/overview
-- [ ] Message volume bar chart (7-day) from GET /v1/dashboard/messages (Recharts)
-- [ ] Appointment donut chart from GET /v1/dashboard/appointments
-- [ ] Quick action buttons + recent conversations list
+- [x] 4 KPI cards (messages, conversations, appointments, contacts) from GET /v1/dashboard/overview
+- [x] Message volume bar chart (7-day) from GET /v1/dashboard/messages (Recharts)
+- [x] Appointment donut chart from GET /v1/dashboard/appointments
+- [x] Quick action buttons + recent conversations list
 
 **Step 4 — Inbox Page** (app/(dashboard)/inbox/page.tsx)
-- [ ] 3-column layout: ConversationList | ChatThread | ContactSidebar
-- [ ] Conversation list with virtual scrolling (react-window), filters, unread badges
-- [ ] Chat thread with message bubbles, timestamps, delivery ticks
-- [ ] Reply box with 24h session guard, quick replies, template fallback
-- [ ] Contact sidebar (tags, appointments, notes)
-- [ ] Real-time via Socket.io (new_message, assignment_change, conversation_update)
-- [ ] Mobile: single-column with back navigation + bottom sheet for contact info
+- [x] 3-column layout: ConversationList | ChatThread | ContactSidebar
+- [x] Conversation list with virtual scrolling (react-window), filters, unread badges
+- [x] Chat thread with message bubbles, timestamps, delivery ticks
+- [x] Reply box with 24h session guard, quick replies, template fallback
+- [x] Contact sidebar (tags, appointments, notes)
+- [x] Real-time via Socket.io (new_message, assignment_change, conversation_update)
+- [x] Mobile: single-column with back navigation + bottom sheet for contact info
 
 **Step 5 — Contacts Pages** (app/(dashboard)/contacts/page.tsx + [id]/page.tsx)
 - [ ] Contacts table (TanStack Table v8, cursor pagination, sort, search)
