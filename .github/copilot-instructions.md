@@ -153,8 +153,7 @@ CURRENT TASK: Frontend (Next.js 14) — 13 Steps
   ✅ Step 5: Contacts pages (table + detail + timeline)
   ✅ Step 6: Appointments page (calendar + booking)
   ✅ Step 7: Campaigns pages (list + create wizard + stats)
-  → Step 8: Onboarding wizard
-  → Step 8: Onboarding wizard (3-step: business → WA → team)
+  ✅ Step 8: Onboarding wizard (3-step: business → WA → team)
   → Step 9: Templates page (card grid + editor + live preview)
   → Step 10: Settings pages (4 tabs: General/WA/Team/Billing)
   → Step 11: Mobile responsive polish (all breakpoints)
@@ -667,9 +666,9 @@ Update `[ ]` to `[x]` as you complete features.
 - [x] Actions: Send/Pause/Resume/Cancel (state machine guards)
 
 **Step 8 — Onboarding Wizard** (app/(onboarding)/setup/page.tsx)
-- [ ] 3-step wizard: Business Details → Connect WhatsApp → Invite Team
-- [ ] Progress bar, skip options, final submit saves all
-- [ ] Redirect logic: login → if !onboarded → /setup, else → /
+- [x] 3-step wizard: Business Details → Connect WhatsApp → Invite Team
+- [x] Progress bar, skip options, final submit saves all
+- [x] Redirect logic: login → if !onboarded → /setup, else → /
 
 **Step 9 — Templates Page** (app/(dashboard)/templates/page.tsx)
 - [ ] Template card grid with status/category filters
