@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+// TODO: Remove DEV_BYPASS before production deployment
+const DEV_BYPASS = true; // Set to false to re-enable auth checks
+
 const PUBLIC_PATHS = ["/login", "/setup"];
 
 export function middleware(request: NextRequest) {
+  // Bypass all auth checks during frontend development
+  if (DEV_BYPASS) return NextResponse.next();
+
   const { pathname } = request.nextUrl;
 
   // Allow public paths

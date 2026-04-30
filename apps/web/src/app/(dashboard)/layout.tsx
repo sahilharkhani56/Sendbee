@@ -1,26 +1,23 @@
+import { Sidebar } from "@/components/layout/sidebar";
+import { Header } from "@/components/layout/header";
+import { MobileNav } from "@/components/layout/mobile-nav";
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-screen overflow-hidden">
-      {/* Sidebar */}
-      <aside className="hidden w-[240px] shrink-0 border-r bg-card md:block">
-        <div className="flex h-14 items-center border-b px-4">
-          <span className="text-lg font-semibold text-teal-700">CRM</span>
-        </div>
-        <nav className="p-3 text-sm text-muted-foreground">
-          Sidebar coming in next step
-        </nav>
-      </aside>
+      {/* Sidebar — hidden on mobile */}
+      <Sidebar />
 
-      {/* Main content */}
+      {/* Main content area */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Header */}
-        <header className="flex h-14 shrink-0 items-center border-b bg-card px-4">
-          <span className="text-sm text-muted-foreground">Header coming in next step</span>
-        </header>
-
-        {/* Page content */}
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+        <Header />
+        <main className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-900 p-4 md:p-6 pb-20 md:pb-6">
+          {children}
+        </main>
       </div>
+
+      {/* Mobile bottom nav */}
+      <MobileNav />
     </div>
   );
 }
